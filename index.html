@@ -1,14 +1,2583 @@
 ﻿<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta http-equiv="refresh" content="0;url=https://shadowcsgo.github.io/neuroforge/">
-  <link rel="canonical" href="https://shadowcsgo.github.io/neuroforge/">
-  <title>NeuroForge</title>
-  <style>body{font-family:system-ui;background:#0a0a0f;color:#e0e0e0;display:flex;min-height:100vh;align-items:center;justify-content:center;text-align:center}a{color:#00e5ff}</style>
+
+<meta charset="UTF-8">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>NeuroForge — Brain Training Suite</title>
+<meta name="description" content="NeuroForge — free brain training games: reaction time, memory, typing, N-Back, and more. Compete on global leaderboards with Discord login.">
+<meta property="og:title" content="NeuroForge — Brain Training Suite">
+<meta property="og:description" content="19 cognitive tests, XP progression, daily challenges, and online leaderboards.">
+<meta property="og:type" content="website">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0a0a0f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="NeuroForge">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap');
+
+/* ============================================================
+   NeuroForge — design system
+   Clean, modern, restrained. One accent, real hierarchy,
+   generous spacing, subtle motion. No neon overload.
+   ============================================================ */
+
+:root{
+  --bg:#0a0b0f;
+  --surface:#101218;
+  --surface2:#161922;
+  --surface3:#1d212c;
+  --border:rgba(255,255,255,0.08);
+  --border-strong:rgba(255,255,255,0.14);
+
+  --text:#eceef3;
+  --muted:#9aa0ad;
+  --dim:#6b7280;
+
+  --accent:#818cf8;          /* indigo, for accent text/icons */
+  --accent-solid:#6366f1;    /* filled buttons */
+  --accent-soft:rgba(129,140,248,0.12);
+  --accent2:#fb7185;         /* rose — danger / "stop" states */
+  --success:#34d399;         /* emerald */
+  --warning:#fbbf24;
+  --gold:#fbbf24;
+
+  --font:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --font-mono:'JetBrains Mono',ui-monospace,'SF Mono',Menlo,monospace;
+
+  --radius:14px;
+  --radius-sm:10px;
+  --shadow:0 1px 2px rgba(0,0,0,0.4),0 8px 24px rgba(0,0,0,0.28);
+  --shadow-lg:0 12px 40px rgba(0,0,0,0.45);
+}
+
+*{margin:0;padding:0;box-sizing:border-box;}
+html{-webkit-text-size-adjust:100%;}
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:var(--font);
+  font-size:16px;
+  line-height:1.5;
+  min-height:100vh;
+  overflow-x:hidden;
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+}
+
+/* Kill the old "vibecoded" decoration layers — keep the DOM nodes so JS
+   that references them never throws, just make them invisible. */
+canvas#bg,.scanlines,.orb,.cursor-glow{display:none!important;}
+
+/* A single, calm ambient backdrop instead of particles + orbs */
+body::before{
+  content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:
+    radial-gradient(900px 500px at 50% -10%,rgba(99,102,241,0.10),transparent 70%),
+    radial-gradient(700px 600px at 100% 100%,rgba(52,211,153,0.05),transparent 70%);
+}
+/* faint dot grid for depth — very subtle, not cyberpunk */
+.dot-grid{
+  position:fixed;inset:0;z-index:0;pointer-events:none;
+  background-image:radial-gradient(rgba(255,255,255,0.025) 1px,transparent 1px);
+  background-size:32px 32px;
+  -webkit-mask-image:radial-gradient(ellipse 80% 60% at 50% 0%,#000,transparent 80%);
+          mask-image:radial-gradient(ellipse 80% 60% at 50% 0%,#000,transparent 80%);
+}
+
+.app{position:relative;z-index:1;max-width:1040px;margin:0 auto;padding:64px 20px 80px;}
+
+/* ---------- Header ---------- */
+.header{text-align:center;margin-bottom:40px;position:relative;}
+.header h1{
+  font-family:var(--font);
+  font-weight:800;
+  font-size:clamp(2rem,5vw,3rem);
+  letter-spacing:-0.03em;
+  color:var(--text);
+  margin-bottom:10px;
+}
+.header p{
+  color:var(--muted);
+  font-size:1rem;
+  font-weight:500;
+  letter-spacing:0;
+  text-transform:none;
+  margin-bottom:6px;
+}
+.header .subtitle{
+  font-size:0.82rem;
+  color:var(--dim);
+  letter-spacing:0.01em;
+  text-transform:none;
+}
+.header-divider{display:none;}
+
+/* ---------- User bar ---------- */
+.user-bar{
+  display:flex;gap:10px;justify-content:center;flex-wrap:wrap;align-items:center;
+  margin-bottom:24px;
+  background:transparent;border:0;padding:0;backdrop-filter:none;
+}
+.user-bar .user-tag{font-size:0.85rem;color:var(--muted);}
+.user-bar .user-tag strong{color:var(--text);font-weight:600;}
+.user-tag strong::after{display:none;}
+
+/* ---------- Banners ---------- */
+.auth-banner{
+  display:none;text-align:center;padding:12px 16px;margin:0 auto 18px;max-width:720px;
+  border-radius:var(--radius-sm);font-size:0.88rem;line-height:1.45;border:1px solid var(--border);
+}
+.auth-banner.show{display:block;}
+.auth-banner.info{background:var(--accent-soft);border-color:rgba(129,140,248,0.3);color:var(--accent);}
+.auth-banner.ok{background:rgba(52,211,153,0.1);border-color:rgba(52,211,153,0.3);color:var(--success);}
+.auth-banner.err{background:rgba(251,113,133,0.1);border-color:rgba(251,113,133,0.35);color:#fda4af;}
+.auth-banner .auth-retry{margin-top:10px;}
+.auth-banner .auth-retry .btn{margin:0 4px;}
+
+.config-banner{
+  background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.3);color:var(--warning);
+  font-size:0.8rem;padding:11px 16px;border-radius:var(--radius-sm);margin-bottom:20px;text-align:center;display:none;
+}
+.config-banner code{font-family:var(--font-mono);font-size:0.85em;}
+
+/* ---------- Stats bar ---------- */
+.stats-bar{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-bottom:18px;cursor:pointer;}
+.stat-pill{
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+  padding:12px 18px;display:flex;align-items:center;gap:12px;transition:border-color .18s ease,transform .18s ease;
+}
+.stat-pill:hover{border-color:var(--border-strong);transform:translateY(-1px);}
+.stat-pill .icon{font-size:1.15rem;filter:none;opacity:0.9;}
+.stat-pill .val{font-family:var(--font-mono);font-weight:700;font-size:1.2rem;color:var(--text);line-height:1;}
+.stat-pill .lbl{color:var(--dim);font-size:0.68rem;text-transform:uppercase;letter-spacing:0.08em;margin-top:3px;}
+.stat-pill.streak-pill{border-color:rgba(251,191,36,0.25);}
+.stat-pill.streak-pill .val{color:var(--warning)!important;}
+.stat-pill.streak-pill .icon{filter:none;}
+
+/* ---------- Level bar ---------- */
+.level-bar{display:flex;align-items:center;gap:12px;margin-bottom:28px;justify-content:center;}
+.level-badge{
+  font-family:var(--font);font-size:0.72rem;font-weight:700;color:var(--accent);
+  letter-spacing:0.12em;min-width:74px;text-align:right;text-transform:uppercase;text-shadow:none;
+}
+.level-wrap{flex:1;max-width:300px;height:6px;background:var(--surface2);border-radius:99px;overflow:hidden;box-shadow:none;}
+.level-fill{height:100%;background:var(--accent-solid);border-radius:99px;transition:width .6s ease;animation:none;}
+.level-next{font-family:var(--font-mono);font-size:0.7rem;color:var(--dim);min-width:74px;}
+
+/* ---------- Tabs ---------- */
+.tabs{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:28px;position:relative;}
+.tab-btn{
+  background:transparent;border:1px solid var(--border);color:var(--muted);
+  padding:8px 16px;border-radius:99px;font-size:0.82rem;cursor:pointer;
+  font-family:var(--font);font-weight:600;letter-spacing:0;text-transform:none;
+  transition:all .18s ease;box-shadow:none;
+}
+.tab-btn:hover{border-color:var(--border-strong);color:var(--text);background:var(--surface);}
+.tab-btn.active{background:var(--text);color:var(--bg);border-color:var(--text);box-shadow:none;}
+.tab-btn[data-cat]::before{content:none;}
+/* category tabs share the same clean active style */
+.tab-btn[data-cat].active{background:var(--text);color:var(--bg);border-color:var(--text);box-shadow:none;}
+.tab-slider{display:none;}
+
+/* ---------- Card grid ---------- */
+.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(248px,1fr));gap:14px;margin-bottom:32px;}
+.card{
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+  padding:22px;cursor:pointer;transition:border-color .18s ease,transform .18s ease,background .18s ease;
+  position:relative;overflow:hidden;
+}
+.card:hover{
+  border-color:var(--border-strong);
+  transform:translateY(-3px);
+  background:var(--surface2);
+  box-shadow:var(--shadow);
+}
+.card:active{transform:translateY(-1px);}
+.card.hidden-card{display:none;}
+.card::before,.card::after{display:none;}
+
+.card .card-icon{font-size:1.7rem;display:block;margin-bottom:12px;line-height:1;filter:none!important;transition:transform .18s ease;}
+.card:hover .card-icon{transform:scale(1.06);}
+
+.card .chip{
+  display:inline-block;padding:4px 10px;border-radius:99px;font-size:0.66rem;font-weight:600;
+  letter-spacing:0.04em;text-transform:uppercase;margin-bottom:12px;border:1px solid transparent;
+}
+.card:hover .chip{filter:none;}
+.chip-speed{background:rgba(251,113,133,0.12);color:#fda4af;}
+.chip-memory{background:rgba(129,140,248,0.12);color:var(--accent);}
+.chip-focus{background:rgba(167,139,250,0.12);color:#c4b5fd;}
+.chip-logic{background:rgba(52,211,153,0.12);color:var(--success);}
+.chip-adapt{background:rgba(251,191,36,0.12);color:var(--warning);}
+.chip-math{background:rgba(251,146,60,0.12);color:#fdba74;}
+.chip-words{background:rgba(96,165,250,0.12);color:#93c5fd;}
+.chip-search{background:rgba(244,114,182,0.12);color:#f9a8d4;}
+.chip-control{background:rgba(45,212,191,0.12);color:#5eead4;}
+.chip-reason{background:rgba(196,181,253,0.12);color:#ddd6fe;}
+.chip-attn{background:rgba(94,234,212,0.12);color:#99f6e4;}
+.chip-verbal2{background:rgba(251,191,36,0.12);color:#fcd34d;}
+
+.card h2{font-size:1.05rem;margin-bottom:6px;font-weight:700;letter-spacing:-0.01em;color:var(--text);}
+.card:hover h2{color:var(--text);}
+.card p{color:var(--muted);font-size:0.84rem;line-height:1.5;}
+.card:hover p{color:var(--muted);}
+.card .best{margin-top:14px;font-size:0.74rem;color:var(--gold);font-weight:600;background:transparent;border-radius:0;padding:0;display:block;font-family:var(--font-mono);}
+.card .best span{color:var(--text);}
+.card .best:empty::after{content:'No record yet';color:var(--dim);font-size:0.72rem;opacity:0.6;font-style:normal;font-family:var(--font);}
+
+/* category accent: a single left rule, calm */
+.card[data-cat="speed"]{border-left:2px solid rgba(251,113,133,0.45);}
+.card[data-cat="memory"]{border-left:2px solid rgba(129,140,248,0.45);}
+.card[data-cat="focus"]{border-left:2px solid rgba(167,139,250,0.45);}
+.card[data-cat="logic"]{border-left:2px solid rgba(52,211,153,0.45);}
+
+/* difficulty dots — quiet */
+.card-difficulty{position:absolute;top:18px;right:18px;display:flex;gap:4px;align-items:center;}
+.diff-dot{width:5px;height:5px;border-radius:50%;transition:none;}
+.diff-dot.filled{background:var(--muted);box-shadow:none;}
+.diff-dot.empty{background:var(--surface3);border:1px solid var(--border);}
+.card[data-cat] .diff-dot.filled{background:var(--muted)!important;box-shadow:none!important;}
+.card:hover .diff-dot.filled{transform:none;}
+
+.card-play{display:none;}
+
+.badge-new{
+  display:inline-block;background:var(--accent-solid);color:#fff;font-size:0.55rem;font-weight:700;
+  letter-spacing:0.08em;padding:2px 6px;border-radius:5px;vertical-align:middle;margin-left:6px;
+  text-transform:uppercase;box-shadow:none;animation:none;
+}
+.practice-badge{display:inline-block;background:rgba(251,191,36,0.14);color:var(--warning);font-size:0.6rem;font-weight:600;letter-spacing:0.05em;padding:2px 8px;border-radius:6px;margin-left:6px;vertical-align:middle;}
+
+/* ---------- Daily challenge ---------- */
+.daily-btn{
+  display:block;margin:0 auto 32px;padding:13px 28px;background:var(--accent-solid);border:none;border-radius:var(--radius-sm);
+  color:#fff;font-family:var(--font);font-size:0.9rem;font-weight:700;letter-spacing:0;cursor:pointer;
+  transition:transform .18s ease,box-shadow .18s ease;width:fit-content;position:relative;overflow:hidden;animation:none;
+}
+.daily-btn:not(.done){animation:none;}
+.daily-btn::before{display:none;}
+.daily-btn:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(99,102,241,0.35);}
+.daily-btn.done{background:var(--surface2);color:var(--dim);cursor:default;pointer-events:none;}
+
+/* ---------- Stats dashboard ---------- */
+.stats-dash{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:22px;margin-bottom:24px;}
+.stats-dash h3{font-family:var(--font);font-size:0.95rem;font-weight:700;color:var(--text);letter-spacing:-0.01em;margin-bottom:16px;text-align:left;-webkit-text-fill-color:initial;background:none;}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;}
+.stat-card{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px;text-align:left;transition:border-color .15s ease;animation:none;}
+.stat-card:hover{transform:none;outline:none;border-color:var(--border-strong);}
+.stat-card .test-name{font-size:0.7rem;color:var(--dim);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;}
+.stat-card .test-best{font-family:var(--font-mono);font-size:1.2rem;font-weight:700;color:var(--text);}
+.stat-card .test-avg{font-size:0.66rem;color:var(--dim);margin-top:3px;}
+.stat-card .test-bar{height:4px;background:var(--surface3);border-radius:99px;margin-top:8px;overflow:hidden;}
+.stat-card .test-bar-fill{height:100%;background:var(--accent-solid);border-radius:99px;}
+
+/* ---------- History / achievements panels ---------- */
+.history-panel{display:none;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:24px;backdrop-filter:none;}
+.history-panel.visible{display:block;animation:fadeIn .25s ease;}
+.history-panel h3{font-family:var(--font)!important;font-weight:700;letter-spacing:-0.01em!important;text-transform:none;}
+.history-section{margin-bottom:16px;}
+.history-section h4{font-size:0.72rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--dim);margin-bottom:8px;border-bottom:1px solid var(--border);padding-bottom:6px;display:flex;align-items:center;gap:6px;}
+.history-row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;font-size:0.82rem;border-bottom:1px solid var(--border);}
+.history-row .val{font-weight:600;font-family:var(--font-mono);font-size:0.8rem;color:var(--text);}
+.history-row .date{color:var(--dim);font-size:0.7rem;}
+.history-empty{color:var(--dim);font-size:0.82rem;text-align:center;padding:14px;}
+
+/* ---------- Buttons ---------- */
+.btn{
+  background:var(--surface2);border:1px solid var(--border);color:var(--text);
+  padding:11px 22px;border-radius:var(--radius-sm);font-size:0.85rem;cursor:pointer;
+  font-family:var(--font);font-weight:600;transition:all .16s ease;margin-top:20px;letter-spacing:0;text-transform:none;
+}
+.btn:hover{border-color:var(--border-strong);background:var(--surface3);color:var(--text);}
+.btn.primary{background:var(--accent-solid);color:#fff;border:1px solid var(--accent-solid);font-weight:700;box-shadow:none;}
+.btn.primary:hover{background:#5457e5;border-color:#5457e5;transform:translateY(-1px);box-shadow:0 6px 18px rgba(99,102,241,0.3);opacity:1;}
+.btn.primary:active{transform:translateY(0);}
+.btn.danger{color:#fda4af;border-color:rgba(251,113,133,0.4);background:transparent;}
+.btn.danger:hover{background:rgba(251,113,133,0.12);color:#fda4af;border-color:rgba(251,113,133,0.6);}
+.btn.small,.btn-sm{padding:8px 16px;font-size:0.78rem;margin-top:0;}
+
+.close-btn{
+  position:absolute;top:16px;right:16px;width:38px;height:38px;background:var(--surface2);
+  border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--muted);font-size:1.1rem;cursor:pointer;
+  z-index:60;display:flex;align-items:center;justify-content:center;transition:all .16s ease;
+}
+.close-btn:hover{border-color:var(--border-strong);color:var(--text);background:var(--surface3);transform:none;}
+
+/* ---------- Instruction / countdown / results ---------- */
+.instruction{text-align:center;max-width:520px;padding:0 16px;}
+.instruction h2{font-size:1.5rem;margin-bottom:14px;font-weight:700;letter-spacing:-0.02em;}
+.instruction p{color:var(--muted);line-height:1.6;font-size:0.92rem;margin-bottom:6px;}
+
+.countdown{font-family:var(--font-mono);font-size:clamp(5rem,12vw,8rem);font-weight:700;color:var(--accent);animation:pulse .8s ease;background:none;-webkit-text-fill-color:initial;}
+.results{text-align:center;animation:fadeIn .4s ease;padding:0 16px;}
+.results .score{font-family:var(--font-mono);font-size:clamp(2.5rem,6vw,4rem);font-weight:700;color:var(--text);animation:scorePop .45s ease;background:none;-webkit-text-fill-color:initial;}
+@keyframes scorePop{0%{transform:scale(.7);opacity:0;}60%{transform:scale(1.06);}100%{transform:scale(1);opacity:1;}}
+.results .grade{font-family:var(--font);font-size:1rem;font-weight:600;letter-spacing:0.06em;color:var(--accent);margin:8px 0 16px;text-transform:uppercase;}
+.results .stats{color:var(--muted);font-size:0.85rem;line-height:1.9;}
+
+.progress-wrap{width:min(220px,60vw);height:5px;background:var(--surface2);border-radius:99px;margin:16px auto;overflow:hidden;}
+.progress-fill{height:100%;background:var(--accent-solid);border-radius:99px;transition:width .3s;}
+
+.result-bar-wrap{width:min(300px,75vw);height:10px;background:var(--surface2);border-radius:99px;margin:12px auto;overflow:hidden;position:relative;}
+.result-bar-fill{height:100%;border-radius:99px;transition:width .8s ease;background:var(--accent-solid);}
+.result-bar-marker{position:absolute;top:-4px;width:3px;height:18px;background:var(--text);border-radius:2px;transition:left .8s ease;}
+
+/* ---------- Footer ---------- */
+.footer{text-align:center;color:var(--dim);font-size:0.74rem;margin-top:48px;letter-spacing:0;display:flex;gap:14px;justify-content:center;flex-wrap:wrap;align-items:center;padding-top:24px;border-top:1px solid var(--border);opacity:1;}
+.footer a{color:var(--muted);cursor:pointer;text-decoration:none;position:relative;transition:color .15s ease;}
+.footer a:hover{color:var(--text);text-decoration:none;}
+.footer a::after{display:none;}
+.reset-area{text-align:center;margin-top:16px;}
+.reset-area a{color:var(--dim);font-size:0.7rem;cursor:pointer;}
+.reset-area a:hover{color:var(--accent2);}
+
+/* ---------- Modals ---------- */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(6,7,10,0.7);z-index:400;align-items:center;justify-content:center;padding:20px;}
+.modal-overlay.active{display:flex;backdrop-filter:blur(10px);}
+.modal{background:var(--surface);border:1px solid var(--border-strong);border-radius:18px;padding:30px;width:100%;max-width:440px;max-height:90vh;overflow-y:auto;position:relative;animation:fadeIn .22s ease;box-shadow:var(--shadow-lg);}
+.modal.wide{max-width:760px;}
+.modal h3{font-family:var(--font);font-weight:700;letter-spacing:-0.01em;margin-bottom:18px;text-align:left;font-size:1.3rem;}
+.modal label{display:block;font-size:0.74rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;margin:14px 0 7px;}
+.modal input,.modal select{width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:12px 14px;border-radius:var(--radius-sm);font-size:0.95rem;outline:none;font-family:var(--font);transition:border-color .15s ease;}
+.modal input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft);}
+.modal .hint{font-size:0.78rem;color:var(--dim);margin-top:7px;line-height:1.45;}
+.modal .err{color:#fda4af;font-size:0.82rem;margin-top:12px;min-height:1.2em;}
+.modal-actions{display:flex;gap:10px;margin-top:22px;flex-wrap:wrap;}
+.modal-actions .btn{margin-top:0;flex:1;min-width:120px;}
+.auth-divider{display:flex;align-items:center;gap:12px;margin:20px 0;color:var(--dim);font-size:0.72rem;text-transform:uppercase;letter-spacing:0.1em;}
+.auth-divider::before,.auth-divider::after{content:'';flex:1;height:1px;background:var(--border);}
+.btn-discord{background:#5865F2;color:#fff;border:1px solid #5865F2;font-weight:600;display:flex;align-items:center;justify-content:center;gap:10px;width:100%;margin-top:0;}
+.btn-discord:hover{background:#4752c4;border-color:#4752c4;color:#fff;opacity:1;transform:translateY(-1px);}
+.btn-discord svg{width:20px;height:20px;flex-shrink:0;}
+
+/* ---------- Leaderboard ---------- */
+.lb-tabs{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-start;margin-bottom:18px;}
+.lb-tab{padding:8px 14px;border-radius:99px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:0.74rem;font-weight:600;letter-spacing:0;text-transform:none;cursor:pointer;transition:all .16s ease;}
+.lb-tab:hover{border-color:var(--border-strong);color:var(--text);}
+.lb-tab.active{border-color:var(--accent);color:var(--accent);background:var(--accent-soft);}
+.lb-table{width:100%;border-collapse:collapse;font-size:0.86rem;}
+.lb-table th{text-align:left;color:var(--dim);font-size:0.66rem;text-transform:uppercase;letter-spacing:0.06em;padding:8px 8px;border-bottom:1px solid var(--border);}
+.lb-table td{padding:11px 8px;border-bottom:1px solid var(--border);}
+.lb-table tr:not(.you):hover td{background:rgba(255,255,255,0.02);}
+.lb-table tr.you td{background:var(--accent-soft);}
+.lb-rank{font-family:var(--font-mono);font-weight:700;color:var(--gold);width:40px;}
+.lb-score{font-family:var(--font-mono);color:var(--accent);font-weight:700;}
+.lb-empty{text-align:center;color:var(--dim);padding:28px;font-size:0.88rem;}
+
+/* ---------- Admin ---------- */
+.admin-row{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;padding:11px 0;border-bottom:1px solid var(--border);font-size:0.84rem;}
+.admin-row input{padding:8px 10px;font-size:0.82rem;}
+.admin-bests{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;margin-top:8px;}
+.admin-bests input{width:100%;padding:7px 9px;font-size:0.78rem;}
+
+/* ---------- Toggles / sliders ---------- */
+.sound-toggle{position:fixed;top:16px;right:16px;z-index:200;width:40px;height:40px;border-radius:var(--radius-sm);background:var(--surface);border:1px solid var(--border);color:var(--text);font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .16s ease;}
+.sound-toggle:hover{border-color:var(--border-strong);background:var(--surface2);}
+.sound-toggle.muted{opacity:0.5;}
+.sound-toggle.practice-active{background:rgba(251,191,36,0.14);border-color:rgba(251,191,36,0.4);color:var(--warning);}
+.volume-slider-wrap{position:fixed;top:64px;right:64px;z-index:200;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;}
+.volume-slider{-webkit-appearance:none;appearance:none;width:90px;height:4px;background:var(--surface3);border-radius:99px;outline:none;cursor:pointer;}
+.volume-slider::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;background:var(--accent);border-radius:50%;cursor:pointer;}
+.volume-slider::-moz-range-thumb{width:14px;height:14px;background:var(--accent);border:none;border-radius:50%;cursor:pointer;}
+
+/* ---------- Toasts ---------- */
+.toast-container{position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:300;display:flex;flex-direction:column;gap:8px;pointer-events:none;width:90vw;max-width:400px;}
+.toast{background:var(--surface);border:1px solid var(--border-strong);border-radius:var(--radius-sm);padding:11px 18px;font-family:var(--font);font-size:0.82rem;font-weight:600;color:var(--text);letter-spacing:0;animation:toastIn .35s ease,toastOut .3s 2.5s ease forwards;text-align:center;backdrop-filter:blur(12px);box-shadow:var(--shadow);}
+@keyframes toastIn{from{opacity:0;transform:translateY(-14px);}to{opacity:1;transform:translateY(0);}}
+@keyframes toastOut{from{opacity:1;transform:translateY(0);}to{opacity:0;transform:translateY(-14px);}}
+
+.daily-badge{position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:250;background:var(--accent-solid);color:#fff;font-family:var(--font);font-size:0.74rem;font-weight:700;letter-spacing:0;padding:7px 16px;border-radius:99px;pointer-events:none;animation:fadeIn .3s ease;}
+
+/* ---------- Shortcut overlay ---------- */
+.shortcut-overlay{display:none;position:fixed;inset:0;background:rgba(6,7,10,0.7);z-index:200;align-items:center;justify-content:center;backdrop-filter:blur(8px);}
+.shortcut-overlay.visible{display:flex;}
+.shortcut-inner{background:var(--surface);border:1px solid var(--border-strong);border-radius:18px;padding:28px;max-width:440px;width:90vw;max-height:80vh;overflow-y:auto;box-shadow:var(--shadow-lg);}
+.shortcut-inner h3{font-family:var(--font);font-weight:700;font-size:1.1rem;color:var(--text);letter-spacing:-0.01em;margin-bottom:18px;text-align:left;}
+.shortcut-grid{display:grid;grid-template-columns:auto 1fr;gap:10px 18px;font-size:0.85rem;align-items:center;color:var(--muted);}
+.shortcut-grid kbd{background:var(--surface2);border:1px solid var(--border-strong);border-radius:6px;padding:3px 9px;font-family:var(--font-mono);font-size:0.74rem;color:var(--text);}
+
+/* ============================================================
+   GAME SCREENS — functional surfaces. Sizing preserved,
+   colours retuned to the new palette, glows toned down.
+   ============================================================ */
+.test-screen{display:none;position:fixed;inset:0;width:100%;height:100dvh;background:var(--bg);z-index:50;flex-direction:column;align-items:center;justify-content:center;padding:16px;}
+.test-screen.active{display:flex;animation:slideIn .22s ease;}
+@keyframes slideIn{from{opacity:0;transform:scale(.98);}to{opacity:1;transform:scale(1);}}
+body.in-test canvas#bg,body.in-test canvas#fxConfetti{display:none;}
+
+/* Reaction */
+.reaction-area{width:100%;max-width:600px;height:clamp(250px,50vh,400px);border-radius:18px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background .08s;user-select:none;}
+.reaction-area.waiting{background:var(--accent2);}
+.reaction-area.ready{background:var(--success);}
+.reaction-area.idle{background:var(--surface2);border:1px solid var(--border);}
+.reaction-area.too-early{background:#e11d48;}
+.reaction-text{font-family:var(--font);font-size:clamp(1rem,3vw,1.4rem);font-weight:700;letter-spacing:0;text-align:center;pointer-events:none;color:#fff;}
+.reaction-result{font-family:var(--font-mono);font-size:clamp(2rem,5vw,3rem);font-weight:700;margin-top:16px;min-height:50px;color:var(--text);}
+
+/* Sequence (Simon) */
+.seq-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;justify-content:center;width:min(280px,72vw);}
+.seq-tile{aspect-ratio:1;border-radius:16px;cursor:pointer;transition:all .12s;opacity:0.35;border:3px solid transparent;}
+.seq-tile:nth-child(1){background:#fb7185;}
+.seq-tile:nth-child(2){background:#60a5fa;}
+.seq-tile:nth-child(3){background:#fbbf24;}
+.seq-tile:nth-child(4){background:#34d399;}
+.seq-tile.lit{opacity:1;transform:scale(1.04);box-shadow:0 0 24px currentColor;}
+.seq-tile.active{border-color:#fff;opacity:1;}
+.seq-tile.wrong{border-color:#e11d48;animation:shake .4s;}
+
+/* Aim */
+.aim-area{width:100%;max-width:min(600px,90vw);height:clamp(280px,55vh,400px);background:var(--surface2);border-radius:18px;position:relative;overflow:hidden;cursor:crosshair;border:1px solid var(--border);}
+.aim-target{--size:40px;width:var(--size);height:var(--size);border-radius:50%;position:absolute;background:var(--accent2);cursor:pointer;box-shadow:0 0 14px rgba(251,113,133,0.4);transform:translate(-50%,-50%);}
+.aim-target.gold{background:var(--gold);box-shadow:0 0 16px rgba(251,191,36,0.5);--size:30px;}
+.aim-target.bonus{background:var(--accent);box-shadow:0 0 16px rgba(129,140,248,0.5);--size:34px;}
+
+/* Number memory */
+.num-display{font-family:var(--font-mono);font-size:clamp(1.8rem,5vw,4.5rem);font-weight:700;letter-spacing:0.1em;color:var(--text);margin:24px 0;}
+.num-input{background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:var(--font-mono);font-size:1.5rem;padding:13px 16px;text-align:center;border-radius:var(--radius-sm);width:min(280px,85vw);outline:none;letter-spacing:0.15em;transition:border-color .18s;}
+.num-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft);}
+
+/* Chimp */
+.chimp-grid{display:grid;gap:8px;max-width:min(460px,85vw);width:85vw;aspect-ratio:1;}
+.chimp-cell{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-weight:700;font-size:clamp(1.2rem,3vw,1.6rem);color:var(--text);cursor:pointer;transition:all .15s;user-select:none;}
+.chimp-cell.showing{background:var(--surface2);color:var(--text);border-color:var(--accent);}
+.chimp-cell.hidden{color:transparent;background:var(--surface);border-color:var(--border);}
+.chimp-cell.correct{background:var(--success);border-color:var(--success);color:#05291c;animation:pop .3s;}
+.chimp-cell.wrong{background:var(--accent2);border-color:var(--accent2);color:#fff;animation:shake .4s;}
+.chimp-cell.clicked{background:var(--surface2);border-color:var(--dim);opacity:0.5;pointer-events:none;}
+
+/* Stroop */
+.stroop-word{font-family:var(--font);font-size:clamp(2.5rem,7vw,5rem);font-weight:800;letter-spacing:-0.01em;margin:24px 0;}
+.stroop-btns{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;}
+.stroop-btn{width:min(80px,18vw);height:min(80px,18vw);border-radius:var(--radius-sm);border:2px solid var(--border);cursor:pointer;font-family:var(--font);font-weight:700;font-size:0.78rem;color:#fff;transition:all .15s;-webkit-tap-highlight-color:transparent;}
+.stroop-btn:hover{transform:scale(1.05);border-color:#fff;}
+
+/* Math */
+.math-problem{font-family:var(--font-mono);font-size:clamp(2rem,5vw,4rem);font-weight:700;letter-spacing:0.04em;color:var(--text);margin:16px 0;}
+.math-timer{font-family:var(--font-mono);font-size:1.5rem;font-weight:700;color:var(--accent);margin:8px 0;}
+
+/* Typing */
+.typing-text{max-width:min(560px,90vw);line-height:2;font-size:1rem;color:var(--dim);margin:16px 0;text-align:left;word-wrap:break-word;user-select:none;-webkit-user-select:none;font-family:var(--font-mono);}
+.typing-text .correct{color:var(--text);}
+.typing-text .incorrect{color:var(--accent2);background:rgba(251,113,133,0.2);border-radius:3px;}
+.typing-input{width:min(560px,90vw);min-height:72px;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:var(--font-mono);font-size:0.95rem;padding:14px;border-radius:var(--radius-sm);outline:none;resize:none;line-height:2;}
+.typing-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft);}
+
+/* Visual search */
+.visual-grid{display:grid;gap:4px;max-width:min(460px,85vw);width:85vw;aspect-ratio:1;margin:0 auto;}
+.visual-cell{border-radius:4px;cursor:pointer;transition:all .1s;user-select:none;-webkit-tap-highlight-color:transparent;}
+.visual-cell:active{transform:scale(.9);}
+
+/* N-Back */
+.nback-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;width:min(300px,72vw);}
+.nback-cell{aspect-ratio:1;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);cursor:pointer;transition:all .1s;-webkit-tap-highlight-color:transparent;}
+.nback-cell.lit{background:var(--accent-solid);border-color:var(--accent-solid);box-shadow:0 0 20px rgba(99,102,241,0.35);}
+.nback-cell.match-click{background:var(--success);border-color:var(--success);box-shadow:none;animation:pop .3s;}
+.nback-cell.miss{background:var(--accent2);border-color:var(--accent2);animation:shake .3s;}
+.nback-cell.false-alarm{background:#e11d48;border-color:#e11d48;animation:shake .3s;}
+
+/* Time perception */
+.time-perception-area{width:100%;max-width:min(480px,85vw);height:clamp(200px,40vh,280px);background:var(--surface2);border:1px solid var(--border);border-radius:18px;display:flex;align-items:center;justify-content:center;cursor:pointer;user-select:none;transition:all .3s;-webkit-tap-highlight-color:transparent;}
+.time-perception-area.counting{border-color:var(--success);background:rgba(52,211,153,0.06);}
+.time-perception-area.stopped{border-color:var(--accent);}
+
+/* Go / No-Go */
+.gng-area{width:100%;max-width:min(480px,85vw);height:clamp(240px,45vh,340px);background:var(--surface2);border:2px solid var(--border);border-radius:22px;display:flex;align-items:center;justify-content:center;transition:all .2s;}
+.gng-area.go{border-color:var(--success);box-shadow:0 0 28px rgba(52,211,153,0.12);}
+.gng-area.nogo{border-color:var(--accent2);}
+.gng-shape{font-size:clamp(3rem,8vw,6rem);transition:transform .1s;pointer-events:none;}
+.gng-shape.pressed{transform:scale(.85);}
+.gng-feedback{font-family:var(--font);font-size:1.4rem;font-weight:700;margin-top:12px;min-height:40px;}
+
+/* Pattern */
+.pattern-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;width:min(210px,55vw);margin:0 auto 16px;}
+.pattern-cell{aspect-ratio:1;border-radius:var(--radius-sm);border:1px solid var(--border);}
+.pattern-options{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;width:min(190px,52vw);margin:0 auto;}
+.pattern-opt{aspect-ratio:1;border-radius:var(--radius-sm);border:2px solid var(--border);cursor:pointer;transition:all .15s;}
+.pattern-opt:hover{border-color:var(--accent);transform:scale(1.04);}
+.pattern-opt.correct-pick{border-color:var(--success);box-shadow:0 0 14px rgba(52,211,153,0.35);}
+.pattern-opt.wrong-pick{border-color:var(--accent2);animation:shake .3s;}
+
+/* Ball tracking */
+.track-area{width:100%;max-width:min(560px,90vw);height:clamp(300px,55vh,420px);background:var(--surface2);border:1px solid var(--border);border-radius:18px;position:relative;overflow:hidden;cursor:pointer;}
+.track-ball{width:28px;height:28px;border-radius:50%;position:absolute;transition:none;box-shadow:0 0 10px rgba(255,255,255,0.2);}
+.track-ball.target{box-shadow:0 0 18px rgba(251,191,36,0.6);border:2px solid var(--gold);}
+.track-ball.highlighted{box-shadow:0 0 22px rgba(129,140,248,0.8);transform:scale(1.15);}
+
+/* Flanker */
+.flanker-arrows{display:flex;gap:8px;justify-content:center;font-size:clamp(2.5rem,6vw,4rem);font-weight:700;font-family:var(--font-mono);margin:20px 0;user-select:none;}
+.flanker-arrow{padding:0 4px;}
+.flanker-arrow.center{color:var(--accent);}
+.flanker-arrow.flanker{color:var(--dim);}
+.flanker-btns{display:flex;gap:20px;justify-content:center;}
+.flanker-btn{width:80px;height:80px;border-radius:var(--radius-sm);border:2px solid var(--border);background:var(--surface2);cursor:pointer;font-size:2rem;display:flex;align-items:center;justify-content:center;transition:all .15s;color:var(--text);}
+.flanker-btn:hover{border-color:var(--accent);transform:scale(1.05);}
+.flanker-btn.correct-press{background:var(--success);border-color:var(--success);}
+.flanker-btn.wrong-press{background:var(--accent2);border-color:var(--accent2);}
+
+/* Word scramble */
+.scramble-word{font-family:var(--font-mono);font-size:clamp(2rem,5vw,3.5rem);font-weight:700;letter-spacing:0.3em;color:var(--accent);margin:24px 0;}
+.scramble-input{background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:var(--font-mono);font-size:1.5rem;padding:13px 16px;text-align:center;border-radius:var(--radius-sm);width:min(350px,80vw);outline:none;letter-spacing:0.15em;text-transform:uppercase;transition:border-color .18s;}
+.scramble-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft);}
+
+/* Effects */
+.card-enter{animation:cardIn .4s ease backwards;}
+@keyframes cardIn{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
+.click-ripple{position:fixed;border-radius:50%;background:rgba(255,255,255,0.08);pointer-events:none;z-index:0;animation:rippleOut .5s ease-out forwards;}
+.click-particle{position:fixed;pointer-events:none;z-index:0;border-radius:50%;}
+@keyframes rippleOut{from{width:0;height:0;opacity:0.35;}to{width:100px;height:100px;opacity:0;margin-left:-50px;margin-top:-50px;}}
+.sparkline{display:inline-flex;align-items:flex-end;gap:1px;height:20px;margin-left:6px;}
+.sparkline-bar{width:3px;min-height:1px;background:var(--accent);border-radius:1px;}
+.screen-flash{position:fixed;inset:0;background:rgba(129,140,248,0.1);z-index:90;pointer-events:none;animation:flashOut .8s ease forwards;}
+@keyframes flashOut{from{opacity:1;}to{opacity:0;}}
+
+/* Keyframes shared */
+@keyframes shake{0%,100%{transform:translateX(0);}25%{transform:translateX(-8px);}75%{transform:translateX(8px);}}
+@keyframes pop{0%{transform:scale(1);}50%{transform:scale(1.12);}100%{transform:scale(1);}}
+@keyframes pulse{0%,100%{transform:scale(1);opacity:1;}50%{transform:scale(1.05);opacity:0.85;}}
+@keyframes fadeIn{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);}}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:10px;height:10px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--surface3);border-radius:99px;border:2px solid var(--bg);}
+::-webkit-scrollbar-thumb:hover{background:#2a2e3a;}
+
+/* Focus visibility for keyboard users */
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+
+/* ---------- Responsive ---------- */
+@media(max-width:600px){
+  .app{padding:40px 16px 64px;}
+  .card-grid{grid-template-columns:1fr;}
+  .seq-grid{width:min(260px,68vw);}
+  .stroop-btn{width:min(66px,17vw);height:min(66px,17vw);font-size:0.68rem;}
+  .nback-grid{width:min(260px,68vw);}
+  .tabs{gap:6px;}
+  .tab-btn{padding:7px 13px;font-size:0.76rem;}
+}
+
+/* ---------- Reduced motion ---------- */
+@media(prefers-reduced-motion:reduce){
+  *{animation:none!important;}
+  .card,.btn,.stat-pill,.tab-btn{transition:none!important;}
+}
+.card .card-icon{display:none!important;}
+.stat-pill .icon{display:none!important;}
+.sound-toggle svg{display:block;}
+.btn-discord svg{display:block;}
+</style>
 </head>
 <body>
-  <p>Redirecting to <a href="https://shadowcsgo.github.io/neuroforge/">NeuroForge</a>…</p>
-  <script>location.replace('https://shadowcsgo.github.io/neuroforge/');</script>
+<canvas id="bg"></canvas>
+<div class="scanlines" aria-hidden="true"></div>
+<div class="dot-grid" aria-hidden="true"></div>
+<div class="orb orb-1" aria-hidden="true"></div>
+<div class="orb orb-2" aria-hidden="true"></div>
+<div class="orb orb-3" aria-hidden="true"></div>
+<button class="sound-toggle" id="practiceToggle" onclick="N.togglePractice()" title="Practice Mode (scores not saved)" style="top:56px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><circle cx="12" cy="12" r="9"></circle><circle cx="12" cy="12" r="4"></circle></svg></button>
+<button class="sound-toggle" id="soundToggle" onclick="N.toggleSound()" title="Toggle Sound"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path><path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path></svg></button>
+<div class="volume-slider-wrap" id="volumeWrap" style="display:none">
+  <input type="range" min="0" max="100" value="50" class="volume-slider" id="volumeSlider" oninput="N.setVolume(this.value)">
+</div>
+<div class="toast-container" id="toastContainer"></div>
+
+<div class="app" id="app">
+  <div class="header">
+    <h1>NEUROFORGE</h1>
+    <p>Brain Training Suite</p>
+    <div class="subtitle">19 Cognitive Tests &middot; Free &middot; Online Leaderboards</div>
+    <div class="header-divider" aria-hidden="true"></div>
+  </div>
+
+  <div class="config-banner" id="configBanner">Connect Supabase in <code>config.js</code> to enable accounts and leaderboards.</div>
+  <div class="auth-banner" id="authBanner" role="status" aria-live="polite"></div>
+
+  <div class="user-bar" id="userBar">
+    <span class="user-tag" id="userTag">Playing as guest — scores stay on this device only</span>
+    <button class="btn btn-sm" onclick="N.showLeaderboard()">Leaderboard</button>
+    <button class="btn btn-sm" id="authBtn" onclick="N.showAuth('login')">Log in</button>
+    <button class="btn btn-sm primary" id="signupBtn" onclick="N.showAuth('signup')">Sign up</button>
+    <button class="btn btn-sm" id="adminBtn" style="display:none" onclick="N.showAdmin()">Edit leaderboards</button>
+    <button class="btn btn-sm danger" id="logoutBtn" style="display:none" onclick="N.logout()">Log out</button>
+  </div>
+
+  <div class="stats-bar" onclick="N.toggleHistory()" title="Click for history">
+    <div class="stat-pill"><span class="icon"></span><div><div class="val" id="globalScore">0</div><div class="lbl">Total Score</div></div></div>
+    <div class="stat-pill"><span class="icon"></span><div><div class="val" id="testsTaken">0</div><div class="lbl">Tests Done</div></div></div>
+    <div class="stat-pill"><span class="icon"></span><div><div class="val" id="topRank">--</div><div class="lbl">Best Rank</div></div></div>
+  </div>
+
+  <div class="level-bar">
+    <div class="level-badge" id="levelBadge">NOVICE</div>
+    <div class="level-wrap"><div class="level-fill" id="levelFill" style="width:0%"></div></div>
+    <div class="level-next" id="levelNext">0 / 50 XP</div>
+  </div>
+
+  <div class="tabs" id="tabs">
+    <button class="tab-btn active" onclick="N.filterCards('all')">All</button>
+    <button class="tab-btn" data-cat="speed" onclick="N.filterCards('speed')">Speed</button>
+    <button class="tab-btn" data-cat="memory" onclick="N.filterCards('memory')">Memory</button>
+    <button class="tab-btn" data-cat="focus" onclick="N.filterCards('focus')">Focus</button>
+    <button class="tab-btn" data-cat="logic" onclick="N.filterCards('logic')">Logic</button>
+  </div>
+
+  <div class="stats-dash" id="statsDash">
+    <h3>Your Stats</h3>
+    <div id="statsDashContent"></div>
+  </div>
+
+  <div class="history-panel" id="historyPanel">
+    <button class="close-btn" style="position:sticky;top:6px;float:right;margin:6px;" onclick="event.stopPropagation();N.toggleHistory()">&#10005;</button>
+    <h3 style="font-family:Orbitron;text-align:center;margin-bottom:16px;letter-spacing:2px;font-size:0.95rem;">PERFORMANCE HISTORY</h3>
+    <div id="historyContent" style="max-height:55vh;overflow-y:auto;"></div>
+  </div>
+
+  <div class="card-grid" id="cardGrid">
+    <div class="card" onclick="N.start('reaction')" data-cat="speed">
+      <span class="chip chip-speed">Speed</span><h2>Reaction Time</h2><p>Click when red turns green. 5 trials of pure reflex.</p><div class="best" id="best-reaction"></div>
+    </div>
+    <div class="card" onclick="N.start('sequence')" data-cat="memory">
+      <span class="chip chip-memory">Memory</span><h2>Sequence Memory</h2><p>Repeat the light pattern. Grows longer each round.</p><div class="best" id="best-sequence"></div>
+    </div>
+    <div class="card" onclick="N.start('aim')" data-cat="speed">
+      <span class="chip chip-focus">Precision</span><h2>Aim Trainer</h2><p>Pop 30 targets fast. Gold=3x, blue=2x. Chain combos.</p><div class="best" id="best-aim"></div>
+    </div>
+    <div class="card" onclick="N.start('number')" data-cat="memory">
+      <span class="chip chip-memory">Memory</span><h2>Number Memory</h2><p>Memorize longer and longer digit strings.</p><div class="best" id="best-number"></div>
+    </div>
+    <div class="card" onclick="N.start('chimp')" data-cat="memory">
+      <span class="chip chip-logic">Logic</span><h2>Chimp Test</h2><p>Click numbers in order after they disappear.</p><div class="best" id="best-chimp"></div>
+    </div>
+    <div class="card" onclick="N.start('verbal')" data-cat="memory">
+      <span class="chip chip-adapt">Adaptability</span><h2>Verbal Memory</h2><p>Seen this word before? Tests working memory.</p><div class="best" id="best-verbal"></div>
+    </div>
+    <div class="card" onclick="N.start('stroop')" data-cat="focus">
+      <span class="chip chip-focus">Focus</span><h2>Stroop Test</h2><p>Name the ink color — your brain will fight you.</p><div class="best" id="best-stroop"></div>
+    </div>
+    <div class="card" onclick="N.start('math')" data-cat="logic">
+      <span class="chip chip-math">Processing</span><h2>Mental Math</h2><p>60s timed arithmetic. How many can you solve?</p><div class="best" id="best-math"></div>
+    </div>
+    <div class="card" onclick="N.start('typing')" data-cat="speed">
+      <span class="chip chip-words">Verbal</span><h2>Typing Speed</h2><p>Type a passage. Live WPM and per-letter accuracy.</p><div class="best" id="best-typing"></div>
+    </div>
+    <div class="card" onclick="N.start('visual')" data-cat="focus">
+      <span class="chip chip-search">Perception</span><h2>Visual Search</h2><p>Spot the odd-colored tile. Grid grows, diff shrinks.</p><div class="best" id="best-visual"></div>
+    </div>
+    <div class="card" onclick="N.start('time')" data-cat="focus">
+      <span class="chip chip-speed">Timing</span><h2>Time Perception</h2><p>Hold and release when you think X seconds passed.</p><div class="best" id="best-time"></div>
+    </div>
+    <div class="card" onclick="N.start('nback')" data-cat="memory">
+      <span class="chip chip-memory">Working Mem</span><h2>N-Back</h2><p>Match position from N steps ago. Brain training gold standard.</p><div class="best" id="best-nback"></div>
+    </div>
+    <div class="card" onclick="N.start('gng')" data-cat="focus">
+      <span class="chip chip-control">Impulse</span><h2>Go / No-Go</h2><p>Press for circles, DON'T press for squares. Tests inhibitory control.</p><div class="best" id="best-gng"></div>
+    </div>
+    <div class="card" onclick="N.start('pattern')" data-cat="logic">
+      <span class="chip chip-reason">Reasoning</span><h2>Pattern Recognition</h2><p>What comes next? Pick the grid that completes the pattern.</p><div class="best" id="best-pattern"></div>
+    </div>
+    <div class="card" onclick="N.start('tracking')" data-cat="focus">
+      <span class="chip chip-attn">Attention</span><h2>Ball Tracking</h2><p>Track the highlighted ball among moving distractors. Can you follow it?</p><div class="best" id="best-tracking"></div>
+    </div>
+    <div class="card" onclick="N.start('flanker')" data-cat="speed">
+      <span class="chip chip-attn">Attention</span><h2>Flanker Task</h2><p>Which way does the CENTER arrow point? Ignore the distracting ones.</p><div class="best" id="best-flanker"></div>
+    </div>
+    <div class="card" onclick="N.start('scramble')" data-cat="logic">
+      <span class="chip chip-verbal2">Verbal</span><h2>Word Scramble</h2><p>Unscramble the letters to form a word. How many can you solve in 60s?</p><div class="best" id="best-scramble"></div>
+    </div>
+    <div class="card" onclick="N.start('rotation')" data-cat="logic">
+      <span class="chip chip-reason">Spatial</span><h2>Mental Rotation</h2><p>Which rotated shape matches the target? Tests spatial reasoning.</p><div class="best" id="best-rotation"></div>
+    </div>
+    <div class="card" onclick="N.start('audio')" data-cat="memory">
+      <span class="chip chip-memory">Audio Mem</span><h2>Audio Sequence</h2><p>Hear the tone pattern, then repeat it. Pure sound-based memory.</p><div class="best" id="best-audio"></div>
+    </div>
+  </div>
+
+  <button class="daily-btn" id="dailyBtn" onclick="N.dailyChallenge()">Daily Challenge &middot; Bonus XP</button>
+
+  <div class="footer">
+    <span>ESC to exit tests</span>
+    <span>&middot;</span>
+    <a onclick="N.toggleHistory()">History</a>
+    <span>&middot;</span>
+    <a onclick="N.resetData()">Reset Data</a>
+    <span>&middot;</span>
+    <a onclick="N.exportData()">Export</a>
+    <span>&middot;</span>
+    <a onclick="N.importData()">Import</a>
+    <span>&middot;</span>
+    <a onclick="N.showAchievements()">Achievements</a>
+    <span>&middot;</span>
+    <span>v3.6 &middot; Build 2026-06-16 &middot; Press ? for shortcuts</span>
+  </div>
+  <div class="reset-area"></div>
+
+  <div class="history-panel" id="achPanel">
+    <button class="close-btn" style="position:sticky;top:6px;float:right;margin:6px;" onclick="event.stopPropagation();N.showAchievements()">&#10005;</button>
+    <h3 style="font-family:Orbitron;text-align:center;margin-bottom:16px;letter-spacing:2px;font-size:0.95rem;">ACHIEVEMENTS</h3>
+    <div id="achContent" style="max-height:55vh;overflow-y:auto;"></div>
+  </div>
+
+  <div class="shortcut-overlay" id="shortcutOverlay">
+    <div class="shortcut-inner" onclick="event.stopPropagation()">
+      <button class="close-btn" style="position:sticky;top:6px;float:right;margin:6px;" onclick="$e('shortcutOverlay').classList.remove('visible')">&#10005;</button>
+      <h3>Keyboard Shortcuts</h3>
+      <div class="shortcut-grid">
+        <div><kbd>ESC</kbd></div><div>Exit current test</div>
+        <div><kbd>?</kbd></div><div>Toggle this help</div>
+        <div><kbd>Space</kbd></div><div>Go/No-Go: respond</div>
+        <div><kbd>Enter</kbd></div><div>Math / Numbers: submit</div>
+        <div><kbd>A / &#8592;</kbd></div><div>Verbal Memory: NEW</div>
+        <div><kbd>S / &#8594;</kbd></div><div>Verbal Memory: SEEN</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="authModal" onclick="if(event.target===this)N.hideAuth()">
+  <div class="modal">
+    <button class="close-btn" style="position:absolute;top:12px;right:12px;" onclick="N.hideAuth()">&#10005;</button>
+    <h3 id="authTitle">Sign up</h3>
+    <div id="authSignupBlock">
+      <label for="authUsername">Username (public on leaderboard)</label>
+      <input id="authUsername" autocomplete="username" placeholder="brain_racer_42" maxlength="20">
+      <div class="hint">3–20 chars: lowercase letters, numbers, underscore</div>
+      <label for="authAdminCode">Admin setup code (optional)</label>
+      <input id="authAdminCode" placeholder="Only if you are the site owner">
+    </div>
+    <label for="authEmail">Email</label>
+    <input id="authEmail" type="email" autocomplete="email" placeholder="you@example.com">
+    <label for="authPassword">Password</label>
+    <input id="authPassword" type="password" autocomplete="current-password" placeholder="At least 6 characters">
+    <div class="err" id="authError"></div>
+    <div class="modal-actions">
+      <button class="btn primary" id="authSubmitBtn" onclick="N.submitAuth()">Create account</button>
+      <button class="btn" onclick="N.hideAuth()">Cancel</button>
+    </div>
+    <div class="auth-divider">or</div>
+    <button type="button" class="btn btn-discord" onclick="N.signInDiscord()">
+      <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/></svg>
+      Continue with Discord
+    </button>
+    <p class="hint" style="text-align:center;margin-top:14px;" id="authSwitch">Already have an account? <a href="#" style="color:var(--accent)" onclick="event.preventDefault();N.showAuth('login')">Log in</a></p>
+  </div>
+</div>
+
+<div class="modal-overlay" id="leaderboardModal" onclick="if(event.target===this)N.hideLeaderboard()">
+  <div class="modal wide">
+    <button class="close-btn" style="position:absolute;top:12px;right:12px;" onclick="N.hideLeaderboard()">&#10005;</button>
+    <h3>Leaderboards</h3>
+    <div class="lb-tabs" id="lbTabs"></div>
+    <div id="leaderboardBody"><div class="lb-empty">Loading…</div></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="adminModal" onclick="if(event.target===this)N.hideAdmin()">
+  <div class="modal wide">
+    <button class="close-btn" style="position:absolute;top:12px;right:12px;" onclick="N.hideAdmin()">&#10005;</button>
+    <h3>Edit leaderboards</h3>
+    <p class="hint" style="text-align:center;margin-bottom:16px;">Admins can fix scores, hide cheaters, or rename players. Changes sync to everyone immediately.</p>
+    <div id="adminBody"><div class="lb-empty">Loading…</div></div>
+  </div>
+</div>
+
+<div class="test-screen" id="testScreen">
+  <button class="close-btn" onclick="N.exit()">&#10005;</button>
+  <div id="testContent"></div>
+</div>
+
+<script src="config.js"></script>
+<script async src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" crossorigin="anonymous"></script>
+<script>
+'use strict';
+var N = window.N = {};
+
+// ====== AUDIO ======
+var N_volume = 0.5;
+(function(){
+  var ctx=null,muted=false;
+  function e(){if(muted)return true;if(!ctx){try{ctx=new(window.AudioContext||window.webkitAudioContext)();}catch(x){return null;}}if(ctx&&ctx.state==='suspended')ctx.resume();return ctx;}
+  function t(f,tp,d,v,g,dl){var vol=v*N_volume;var c=e();if(!c||c===true)return;var T=c.currentTime+(dl||0),o=c.createOscillator(),gn=c.createGain();o.type=tp;o.frequency.setValueAtTime(f,T);if(g)o.frequency.linearRampToValueAtTime(g,T+d);gn.gain.setValueAtTime(vol,T);gn.gain.exponentialRampToValueAtTime(0.001,T+d);o.connect(gn);gn.connect(c.destination);o.start(T);o.stop(T+d);}
+  N.toggleSound=function(){muted=!muted;var b=$e('soundToggle');var vw=$e('volumeWrap');if(muted){b.classList.add('muted');b.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line></svg>';if(vw)vw.style.display='none';}else{b.classList.remove('muted');b.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path><path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path></svg>';if(vw)vw.style.display='block';N.sfx.tick();}};
+  N.sfx={};
+  N.sfx.click=function(){t(800,'sine',0.06,0.06);t(1200,'sine',0.05,0.03,null,0.02);};
+  N.sfx.ok=function(){t(523,'sine',0.12,0.1);t(659,'sine',0.12,0.08,null,0.1);t(784,'sine',0.15,0.07,null,0.2);};
+  N.sfx.fail=function(){t(150,'sawtooth',0.25,0.08);t(100,'square',0.2,0.05,null,0.1);};
+  N.sfx.tick=function(){t(440,'triangle',0.1,0.07);};
+  N.sfx.go=function(){t(880,'square',0.15,0.1);t(1100,'square',0.12,0.08,null,0.08);};
+  N.sfx.achieve=function(){t(523,'sine',0.15,0.08);t(659,'sine',0.15,0.06,null,0.1);t(784,'sine',0.15,0.06,null,0.2);t(1047,'sine',0.2,0.08,null,0.3);};
+  N.sfx.combo=function(){t(600,'sine',0.08,0.05);t(900,'sine',0.08,0.04,null,0.04);};
+  N.sfx.hit=function(){t(600+Math.random()*400,'sine',0.07,0.04);};
+  N.sfx.bonus=function(){t(500,'sine',0.1,0.06);t(800,'sine',0.1,0.05,null,0.05);};
+  N.sfx.gold=function(){t(440,'triangle',0.1,0.06);t(660,'triangle',0.1,0.05,null,0.05);t(880,'triangle',0.12,0.04,null,0.1);};
+  N.sfx.pop=function(){t(300+Math.random()*500,'sine',0.05,0.04);};
+  N.sfx.woosh=function(){t(200,'sawtooth',0.15,0.03,600);};
+  N.sfx.ding=function(){t(1200,'sine',0.08,0.06);t(1600,'sine',0.06,0.04,null,0.04);};
+  N.sfx.buzz=function(){t(60,'square',0.3,0.06);t(50,'sawtooth',0.2,0.04,null,0.03);};
+})();
+N.setVolume=function(v){N_volume=v/100;};
+
+// ====== CONFETTI ======
+(function(){
+  var c=document.createElement('canvas'),ctx,parts=[];
+  c.id='fxConfetti';
+  c.style.cssText='position:fixed;top:0;left:0;width:100%;height:100%;z-index:100;pointer-events:none;';
+  document.body.appendChild(c);ctx=c.getContext('2d');
+  function rs(){c.width=innerWidth;c.height=innerHeight;}rs();addEventListener('resize',rs);
+  N.confetti=function(n){if(N._fxAllowed&&!N._fxAllowed())return;n=n||60;var cx=innerWidth/2,cy=innerHeight/2;for(var i=0;i<n;i++)parts.push({x:cx+(Math.random()-0.5)*200,y:cy+(Math.random()-0.5)*100,vx:(Math.random()-0.5)*12,vy:-(Math.random()*14+6),g:0.4,r:Math.random()*360,rs:(Math.random()-0.5)*12,s:Math.random()*8+4,cl:['#ff3d71','#00e5ff','#ffd740','#b347ea','#00e676'][Math.floor(Math.random()*5)],life:1,decay:0.005+Math.random()*0.015,sh:Math.random()>0.5});};
+  (function loop(){ctx.clearRect(0,0,c.width,c.height);parts=parts.filter(function(p){return p.life>0;});parts.forEach(function(p){p.x+=p.vx;p.y+=p.vy;p.vy+=p.g;p.vx*=0.99;p.r+=p.rs;p.life-=p.decay;ctx.save();ctx.globalAlpha=p.life;ctx.translate(p.x,p.y);ctx.rotate(p.r*Math.PI/180);ctx.fillStyle=p.cl;if(p.sh)ctx.fillRect(-p.s/2,-p.s/4,p.s,p.s/2);else{ctx.beginPath();ctx.arc(0,0,p.s/2,0,Math.PI*2);ctx.fill();}ctx.restore();});requestAnimationFrame(loop);})();
+})();
+
+// ====== SHAKE ======
+N.shake=function(i){i=i||6;var el=document.getElementById('testScreen'),orig=el.style.transform||'',c=0;el.style.transition='none';var iv=setInterval(function(){if(c>=8){clearInterval(iv);el.style.transform=orig;el.style.transition='transform 0.15s ease';return;}el.style.transform='translate('+((Math.random()-0.5)*i*2)+'px,'+((Math.random()-0.5)*i*2)+'px)';i*=0.75;c++;},25);};
+
+// ====== BG PARTICLES ( interactive ) ======
+(function(){
+  var c=document.getElementById('bg'),ctx=c.getContext('2d'),parts=[],mx=innerWidth/2,my=innerHeight/2;
+  function rs(){c.width=innerWidth;c.height=innerHeight;}rs();addEventListener('resize',rs);
+  document.addEventListener('mousemove',function(e){mx=e.clientX;my=e.clientY;});
+  document.addEventListener('touchmove',function(e){mx=e.touches[0].clientX;my=e.touches[0].clientY;});
+  function P(){this.reset(true);}
+  P.prototype.reset=function(i){this.x=Math.random()*c.width;this.y=i?Math.random()*c.height:c.height+20;this.s=Math.random()*2.5+0.5;this.sp=Math.random()*0.5+0.1;this.o=Math.random()*0.6+0.1;this.d=(Math.random()-0.5)*0.4;this.hue=Math.random()<0.3?200:Math.random()<0.5?280:180;};
+  P.prototype.update=function(){
+    var dx=mx-this.x,dy=my-this.y,dist=Math.sqrt(dx*dx+dy*dy);
+    if(dist<200){this.x+=dx*0.002;this.y+=dy*0.002;}
+    this.y-=this.sp;this.x+=this.d;if(this.y<-20)this.reset(false);if(this.x<-20)this.x=c.width+20;if(this.x>c.width+20)this.x=-20;
+  };
+  P.prototype.draw=function(){ctx.beginPath();ctx.arc(this.x,this.y,this.s,0,Math.PI*2);ctx.fillStyle='hsla('+this.hue+',80%,60%,'+this.o+')';ctx.fill();};
+  for(var i=0;i<100;i++)parts.push(new P());
+  (function loop(){ctx.clearRect(0,0,c.width,c.height);parts.forEach(function(p){p.update();});var maxD=120;for(var i=0;i<parts.length;i++){for(var j=i+1;j<parts.length;j++){var ndx=parts[i].x-parts[j].x,ndy=parts[i].y-parts[j].y,nd=Math.sqrt(ndx*ndx+ndy*ndy);if(nd<maxD){var nalpha=(1-nd/maxD)*0.1;ctx.beginPath();ctx.moveTo(parts[i].x,parts[i].y);ctx.lineTo(parts[j].x,parts[j].y);ctx.strokeStyle='hsla(195,80%,60%,'+nalpha+')';ctx.lineWidth=0.5;ctx.stroke();}}}parts.forEach(function(p){p.draw();});requestAnimationFrame(loop);})();
+})();
+
+// ====== HELPERS ======
+var $e=function(id){return document.getElementById(id);};
+var $c=function(){return document.getElementById('testContent');};
+
+N.getLS=function(){try{return JSON.parse(localStorage.getItem('nf')||'{}');}catch(e){return{};}};
+N.setLS=function(s){localStorage.setItem('nf',JSON.stringify(s));};
+
+// ====== GAME META (leaderboards) ======
+N.gameMeta = {
+  global: { label: 'Global XP', key: 'total_score', lowerBetter: false, format: function(v){ return v + ' XP'; } },
+  reaction: { label: 'Reaction', key: 'reaction', lowerBetter: true, format: function(v){ return v + 'ms'; } },
+  sequence: { label: 'Sequence', key: 'sequence', lowerBetter: false, format: function(v){ return v; } },
+  aim: { label: 'Aim', key: 'aim', lowerBetter: true, format: function(v){ return v + 'ms'; } },
+  number: { label: 'Number', key: 'number', lowerBetter: false, format: function(v){ return v + ' digits'; } },
+  chimp: { label: 'Chimp', key: 'chimp', lowerBetter: false, format: function(v){ return v; } },
+  verbal: { label: 'Verbal', key: 'verbal', lowerBetter: false, format: function(v){ return v + ' pts'; } },
+  stroop: { label: 'Stroop', key: 'stroop', lowerBetter: false, format: function(v){ return v + '%'; } },
+  math: { label: 'Math', key: 'math', lowerBetter: false, format: function(v){ return v; } },
+  typing: { label: 'Typing', key: 'typing', lowerBetter: false, format: function(v){ return v + ' WPM'; } },
+  visual: { label: 'Visual', key: 'visual', lowerBetter: false, format: function(v){ return v + ' pts'; } },
+  time: { label: 'Time', key: 'time', lowerBetter: false, format: function(v){ return v + '%'; } },
+  nback: { label: 'N-Back', key: 'nback', lowerBetter: false, format: function(v){ return v + '-Back'; } },
+  gng: { label: 'Go/No-Go', key: 'gng', lowerBetter: false, format: function(v){ return v + '%'; } },
+  pattern: { label: 'Pattern', key: 'pattern', lowerBetter: false, format: function(v){ return v + ' pts'; } },
+  tracking: { label: 'Tracking', key: 'tracking', lowerBetter: false, format: function(v){ return v + ' pts'; } },
+  flanker: { label: 'Flanker', key: 'flanker', lowerBetter: false, format: function(v){ return v + '%'; } },
+  scramble: { label: 'Scramble', key: 'scramble', lowerBetter: false, format: function(v){ return v + ' words'; } },
+  rotation: { label: 'Rotation', key: 'rotation', lowerBetter: false, format: function(v){ return v + ' pts'; } },
+  audio: { label: 'Audio', key: 'audio', lowerBetter: false, format: function(v){ return v + ' words'; } }
+};
+N.MAX_TYPING_WPM = 250;
+N.validateTypingScore = function(wpm, secs, correctChars){
+  if (!secs || wpm > N.MAX_TYPING_WPM || secs < 2) return false;
+  var words = Math.max(0, correctChars) / 5;
+  if (!words) return false;
+  return secs >= (words / (N.MAX_TYPING_WPM / 60)) * 0.85;
+};
+N.typingCheatXp = function(wpm){
+  return Math.max(1, Math.floor(Number(wpm) / 2)) + 1;
+};
+N.estimateLegitXp = function(s){
+  var xp = s.testsTaken || 0, b = s.bests || {};
+  for (var k in b) {
+    if (k === 'typing') continue;
+    var v = Number(b[k]);
+    if (!isNaN(v) && v > 0) xp += Math.max(1, Math.floor(v / 2));
+  }
+  return xp;
+};
+N.sanitizeBests = function(bests, s){
+  if (!bests) return {};
+  var out = Object.assign({}, bests);
+  if (out.typing !== undefined && Number(out.typing) > N.MAX_TYPING_WPM) {
+    if (s) s.totalScore = Math.max(0, (s.totalScore || 0) - N.typingCheatXp(out.typing));
+    delete out.typing;
+  }
+  return out;
+};
+N.reconcileCheatXp = function(s){
+  s.bests = N.sanitizeBests(s.bests || {}, s);
+  var legit = N.estimateLegitXp(s);
+  if ((s.totalScore || 0) > legit + 50) s.totalScore = legit;
+  return s;
+};
+
+// ====== SUPABASE / AUTH / LEADERBOARDS ======
+N.auth = { user: null, profile: null, client: null, mode: 'signup', lbTab: 'global', syncTimer: null };
+
+N.cloudReady = function(){
+  var c = window.NF_CONFIG || {};
+  return c.SUPABASE_URL && c.SUPABASE_ANON_KEY &&
+    c.SUPABASE_URL.indexOf('YOUR_PROJECT') === -1 &&
+    c.SUPABASE_ANON_KEY.indexOf('YOUR_ANON') === -1 &&
+    typeof supabase !== 'undefined';
+};
+
+N.authStorage = {
+  getItem: function(key) {
+    try {
+      var v = localStorage.getItem(key);
+      if (v != null) return v;
+    } catch (e) {}
+    try { return sessionStorage.getItem(key); } catch (e) { return null; }
+  },
+  setItem: function(key, val) {
+    try { localStorage.setItem(key, val); } catch (e) {}
+    try { sessionStorage.setItem(key, val); } catch (e) {}
+  },
+  removeItem: function(key) {
+    try { localStorage.removeItem(key); } catch (e) {}
+    try { sessionStorage.removeItem(key); } catch (e) {}
+  }
+};
+
+N.showAuthBanner = function(msg, kind, withRetry) {
+  var el = $e('authBanner');
+  if (!el) return;
+  if (!msg) { el.className = 'auth-banner'; el.textContent = ''; return; }
+  el.className = 'auth-banner show ' + (kind || 'info');
+  if (withRetry) {
+    el.innerHTML = N.escape(msg) +
+      '<div class="auth-retry">' +
+      '<button type="button" class="btn btn-sm primary" onclick="N.clearOAuthStuck();N.showAuth(\'login\')">Try Discord again</button> ' +
+      '<button type="button" class="btn btn-sm" onclick="N.clearOAuthStuck()">Dismiss</button>' +
+      '</div>';
+  } else {
+    el.textContent = msg;
+  }
+};
+
+N.withTimeout = function(promise, ms, label) {
+  return Promise.race([
+    promise,
+    new Promise(function(_, reject) {
+      setTimeout(function() {
+        reject(new Error((label || 'Request') + ' timed out after ' + Math.round(ms / 1000) + 's'));
+      }, ms);
+    })
+  ]);
+};
+
+N.bootCloud = function() {
+  if (N.auth._bootStarted) return N.initCloudPromise;
+  N.auth._bootStarted = true;
+  N.initCloudPromise = N.initCloud().catch(function(e) {
+    N.logError('initCloud failed', e);
+    N.updateAuthUI();
+  });
+  return N.initCloudPromise;
+};
+
+N.waitForCloud = async function(ms) {
+  ms = ms || 6000;
+  try {
+    if (typeof supabase === 'undefined') {
+      await N.withTimeout(new Promise(function(resolve, reject) {
+        var tries = 0;
+        var iv = setInterval(function() {
+          if (typeof supabase !== 'undefined') { clearInterval(iv); resolve(); return; }
+          if (++tries > 120) { clearInterval(iv); reject(new Error('Supabase library blocked — turn off ad blocker or use Chrome')); }
+        }, 50);
+      }), ms, 'Supabase library');
+    }
+    N.bootCloud();
+    await N.withTimeout(N.initCloudPromise, ms, 'Cloud connect');
+    return !!N.auth.client;
+  } catch (e) {
+    N.logWarn('waitForCloud', e);
+    return false;
+  }
+};
+
+N.clearOAuthStuck = function() {
+  N.cleanAuthUrl();
+  try { sessionStorage.removeItem('nf-oauth-pending'); } catch (e) {}
+  N.auth.lastError = null;
+  N.auth._profileLoadPromise = null;
+  N.showAuthBanner('');
+  N.updateAuthUI();
+  N.toast('Ready — use Log in ΓåÆ Continue with Discord (Chrome works best if Opera blocks it).');
+};
+
+N.cleanAuthUrl = function(){
+  var clean = N.getRedirectUrl();
+  if (window.location.search || window.location.hash) {
+    window.history.replaceState({}, document.title, clean);
+  }
+};
+
+N.hasAuthCallback = function(){
+  if (/[?&]code=/.test(window.location.search)) return true;
+  if (/access_token=/.test(window.location.hash)) return true;
+  if (/error=/.test(window.location.search) || /error=/.test(window.location.hash)) return true;
+  return false;
+};
+
+N.getOAuthError = function(){
+  var q = new URLSearchParams(window.location.search);
+  if (q.get('error')) return q.get('error_description') || q.get('error');
+  var hash = window.location.hash.replace(/^#/, '');
+  if (!hash) return null;
+  var h = new URLSearchParams(hash);
+  if (h.get('error')) return h.get('error_description') || h.get('error');
+  return null;
+};
+
+N.finishAuthSession = async function(session, fromOAuth){
+  if (!session) return false;
+  N.auth.user = session.user;
+  N.auth.lastError = null;
+  try {
+    await N.withTimeout(N.loadProfile(), 12000, 'Profile setup');
+  } catch (e) {
+    N.logWarn('profile load', e);
+    N.auth.lastError = null;
+  }
+  if (fromOAuth) {
+    N.cleanAuthUrl();
+    try { sessionStorage.removeItem('nf-oauth-pending'); } catch (e) {}
+  }
+  N.updateAuthUI();
+  if (fromOAuth && N.auth.profile) {
+    N.toast('Welcome, ' + N.auth.profile.username + '!');
+    N.showAuthBanner('Logged in as ' + N.auth.profile.username, 'ok');
+  }
+  return true;
+};
+
+N.operaAuthHint = function(){
+  return 'Opera GX may block login. Turn off ad blocker for this site, or allow ' + (window.NF_CONFIG && window.NF_CONFIG.SUPABASE_URL ? window.NF_CONFIG.SUPABASE_URL : 'supabase.co') + ', then try Discord again in the same tab.';
+};
+
+N.ensureAuthClient = function(){
+  if (N.auth.client) return N.auth.client;
+  N.auth.client = supabase.createClient(
+    window.NF_CONFIG.SUPABASE_URL,
+    window.NF_CONFIG.SUPABASE_ANON_KEY,
+    {
+      auth: {
+        flowType: 'pkce',
+        detectSessionInUrl: false,
+        persistSession: true,
+        autoRefreshToken: true,
+        storage: N.authStorage,
+        storageKey: 'nf-auth'
+      }
+    }
+  );
+  N.auth.client.auth.onAuthStateChange(async function(event, session){
+    if (event === 'SIGNED_OUT') {
+      N.auth.user = null;
+      N.auth.profile = null;
+      N.showAuthBanner('');
+      N.updateAuthUI();
+      return;
+    }
+    if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session && !N.auth.user) {
+      await N.finishAuthSession(session, false);
+    }
+  });
+  return N.auth.client;
+};
+
+N.exchangeOAuthCode = async function(){
+  var q = new URLSearchParams(window.location.search);
+  var code = q.get('code');
+  if (!code) return null;
+  var client = N.ensureAuthClient();
+  N.showAuthBanner('Finishing Discord login…', 'info');
+  var res = await N.withTimeout(
+    client.auth.exchangeCodeForSession(code),
+    15000,
+    'Discord login'
+  );
+  if (res.error) throw res.error;
+  return res.data && res.data.session ? res.data.session : null;
+};
+
+N.initCloud = async function(){
+  if (!N.cloudReady()) {
+    var b = $e('configBanner'); if (b) b.style.display = 'block';
+    N.updateAuthUI();
+    return;
+  }
+  var hadAuthCallback = N.hasAuthCallback();
+  if (N.auth.client && N.auth.user && !hadAuthCallback) return;
+
+  var oauthErr = N.getOAuthError();
+  if (oauthErr) {
+    var friendly;
+    if (/unable to exchange external code/i.test(oauthErr)) {
+      friendly = 'Discord login is misconfigured on the server. Contact the site owner.';
+    } else {
+      friendly = N.safeError({ message: oauthErr }, 'Login was cancelled or failed');
+    }
+    N.auth.lastError = friendly;
+    N.showAuthBanner(friendly, 'err', true);
+    N.cleanAuthUrl();
+    N.updateAuthUI();
+    return;
+  }
+
+  N.ensureAuthClient();
+
+  try {
+    if (hadAuthCallback) {
+      var session = await N.exchangeOAuthCode();
+      if (session) {
+        await N.finishAuthSession(session, true);
+        return;
+      }
+      throw new Error('Discord login did not complete');
+    }
+
+    var sessRes = await N.withTimeout(N.auth.client.auth.getSession(), 8000, 'Session check');
+    if (sessRes.error) throw sessRes.error;
+    if (sessRes.data.session) {
+      await N.finishAuthSession(sessRes.data.session, false);
+      return;
+    }
+  } catch (e) {
+    N.logError('initCloud auth error', e);
+    var msg = N.safeError(e, 'Login failed');
+    if (hadAuthCallback) {
+      N.auth.lastError = msg + ' ' + N.operaAuthHint();
+      N.showAuthBanner(N.auth.lastError, 'err', true);
+      N.toast('Discord login failed — tap Try Discord again below');
+      N.cleanAuthUrl();
+    } else {
+      N.auth.lastError = msg;
+      N.showAuthBanner(msg, 'err');
+    }
+  }
+  N.updateAuthUI();
+};
+
+N.updateAuthUI = function(){
+  var tag = $e('userTag'), authBtn = $e('authBtn'), signupBtn = $e('signupBtn'), logoutBtn = $e('logoutBtn'), adminBtn = $e('adminBtn');
+  if (N.auth.user && N.auth.profile) {
+    tag.innerHTML = 'Playing as <strong>' + N.escape(N.auth.profile.username) + '</strong> — scores sync to leaderboards';
+    N.showAuthBanner('Logged in as ' + N.auth.profile.username, 'ok');
+    authBtn.style.display = 'none'; signupBtn.style.display = 'none'; logoutBtn.style.display = '';
+    adminBtn.style.display = N.auth.profile.is_admin ? '' : 'none';
+  } else if (N.auth.user) {
+    var fallback = N.discordUsernameFromUser(N.auth.user);
+    var status = N.auth.lastError ? N.escape(N.auth.lastError) : 'finishing setup…';
+    tag.innerHTML = 'Logged in as <strong>' + N.escape(fallback) + '</strong> — ' + status;
+    authBtn.style.display = 'none'; signupBtn.style.display = 'none'; logoutBtn.style.display = '';
+    adminBtn.style.display = 'none';
+  } else if (N.auth.lastError) {
+    tag.textContent = N.auth.lastError;
+    N.showAuthBanner(N.auth.lastError, 'err');
+    authBtn.style.display = N.cloudReady() ? '' : 'none';
+    signupBtn.style.display = N.cloudReady() ? '' : 'none';
+    logoutBtn.style.display = 'none';
+    adminBtn.style.display = 'none';
+  } else {
+    tag.textContent = N.cloudReady() ? 'Playing as guest — sign up to appear on leaderboards' : 'Playing as guest — scores stay on this device only';
+    if (!N.hasAuthCallback()) N.showAuthBanner('');
+    authBtn.style.display = N.cloudReady() ? '' : 'none';
+    signupBtn.style.display = N.cloudReady() ? '' : 'none';
+    logoutBtn.style.display = 'none';
+    adminBtn.style.display = 'none';
+  }
+};
+
+N.escape = function(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); };
+
+N.safeError = function(err, fallback){
+  fallback = fallback || 'Something went wrong. Please try again.';
+  if (!err) return fallback;
+  var msg = String((err && err.message) || err);
+  if (/\d{1,3}(?:\.\d{1,3}){3}/.test(msg) || /\bip\s*address\b/i.test(msg)) return fallback;
+  if (/token|bearer|password|secret|api[_-]?key|authorization|access_token/i.test(msg)) return fallback;
+  if (/timeout|timed out/i.test(msg)) return 'Request timed out. Check your connection and try again.';
+  if (/network|fetch|failed to fetch|load failed/i.test(msg)) return 'Could not reach the server. Games still work offline.';
+  if (/invalid login|invalid credentials|invalid email or password/i.test(msg)) return 'Invalid email or password.';
+  if (/email not confirmed/i.test(msg)) return 'Confirm your email first, then log in.';
+  if (/profiles|42P01|schema|relation.*does not exist/i.test(msg)) return 'Leaderboards are not set up yet.';
+  if (/unable to exchange external code/i.test(msg)) return 'Discord login is misconfigured on the server.';
+  if (/supabase library blocked/i.test(msg)) return 'Login blocked by browser — try Chrome or disable ad blockers.';
+  return fallback;
+};
+
+N.log = function(){ if (window.NF_CONFIG && window.NF_CONFIG.DEBUG) console.log.apply(console, arguments); };
+N.logWarn = function(){ if (window.NF_CONFIG && window.NF_CONFIG.DEBUG) console.warn.apply(console, arguments); };
+N.logError = function(){ if (window.NF_CONFIG && window.NF_CONFIG.DEBUG) console.error.apply(console, arguments); };
+
+N.mergeProfileToLocal = function(profile){
+  var s = N.getLS();
+  s.testsTaken = Math.max(s.testsTaken || 0, profile.tests_taken || 0);
+  s.bests = N.sanitizeBests(s.bests || {}, s);
+  var pb = N.sanitizeBests(profile.bests || {});
+  for (var k in pb) {
+    if (pb[k] === null || pb[k] === undefined) continue;
+    var meta = N.gameMeta[k];
+    if (!meta) continue;
+    var cur = s.bests[k];
+    if (cur === undefined) s.bests[k] = pb[k];
+    else if (meta.lowerBetter) s.bests[k] = Math.min(cur, pb[k]);
+    else s.bests[k] = Math.max(cur, pb[k]);
+  }
+  var cloudLegit = N.estimateLegitXp({ testsTaken: profile.tests_taken, bests: profile.bests || {} });
+  var localLegit = N.estimateLegitXp(s);
+  var cloudScore = profile.total_score || 0;
+  if (cloudScore > cloudLegit + 50) cloudScore = cloudLegit;
+  s.totalScore = Math.max(s.totalScore || 0, cloudScore);
+  N.reconcileCheatXp(s);
+  N.setLS(s);
+  N.updateUI();
+};
+
+N.discordUsernameFromUser = function(user){
+  var m = user.user_metadata || {};
+  var raw = (m.username || m.preferred_username || m.name || m.full_name || (user.email ? user.email.split('@')[0] : '') || 'player').toLowerCase();
+  raw = raw.replace(/[^a-z0-9_]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '').slice(0, 20);
+  if (raw.length < 3) raw = 'player_' + user.id.replace(/-/g, '').slice(0, 6);
+  return raw.slice(0, 20);
+};
+
+N.loadProfile = async function(){
+  if (!N.auth.client || !N.auth.user) return;
+  if (N.auth._profileLoadPromise) return N.auth._profileLoadPromise;
+  N.auth._profileLoadPromise = (async function(){
+  var res = await N.withTimeout(
+    N.auth.client.from('profiles').select('*').eq('id', N.auth.user.id).maybeSingle(),
+    12000,
+    'Profile load'
+  );
+  if (res.error) {
+    N.logError('Profile load error', res.error);
+    var hint = N.safeError(res.error, 'Could not load your profile');
+    N.auth.lastError = hint;
+    N.toast(hint);
+    N.updateAuthUI();
+    return;
+  }
+  if (!res.data) {
+    var uname = N.discordUsernameFromUser(N.auth.user);
+    var ins = await N.auth.client.from('profiles').insert({ id: N.auth.user.id, username: uname }).select().maybeSingle();
+    if (ins.error && ins.error.code === '23505') {
+      uname = uname.slice(0, 14) + '_' + Math.random().toString(36).slice(2, 6);
+      ins = await N.auth.client.from('profiles').insert({ id: N.auth.user.id, username: uname }).select().maybeSingle();
+    }
+    if (ins.error) {
+      N.logError('Profile create error', ins.error);
+      N.auth.lastError = N.safeError(ins.error, 'Could not create profile');
+      N.toast(N.auth.lastError);
+      N.updateAuthUI();
+      return;
+    }
+    res.data = ins.data;
+  }
+  N.auth.profile = res.data;
+  if (N.auth.profile) {
+    N.auth.lastError = null;
+    N.mergeProfileToLocal(N.auth.profile);
+  }
+  N.updateAuthUI();
+  await N.syncProfile(true);
+  })();
+  try {
+    return await N.auth._profileLoadPromise;
+  } finally {
+    N.auth._profileLoadPromise = null;
+  }
+};
+
+N.buildProfilePayload = function(){
+  var s = N.getLS();
+  N.reconcileCheatXp(s);
+  N.setLS(s);
+  return {
+    total_score: s.totalScore || 0,
+    tests_taken: s.testsTaken || 0,
+    bests: s.bests,
+    updated_at: new Date().toISOString()
+  };
+};
+
+N.syncProfile = async function(silent){
+  if (!N.auth.client || !N.auth.user) return;
+  clearTimeout(N.auth.syncTimer);
+  N.auth.syncTimer = setTimeout(async function(){
+    try {
+      var payload = N.buildProfilePayload();
+      var res = await N.withTimeout(
+        N.auth.client.from('profiles').update(payload).eq('id', N.auth.user.id).select().maybeSingle(),
+        8000,
+        'Score sync'
+      );
+      if (res.error && !silent) N.toast('Sync failed — check connection');
+      else if (res.data) N.auth.profile = res.data;
+    } catch (e) {
+      N.logWarn('syncProfile', e);
+    }
+  }, silent ? 0 : 400);
+};
+
+N.showAuth = function(mode){
+  if (!N.cloudReady()) { N.toast('Configure config.js first'); return; }
+  N.auth.mode = mode;
+  $e('authTitle').textContent = mode === 'signup' ? 'Sign up' : 'Log in';
+  $e('authSubmitBtn').textContent = mode === 'signup' ? 'Create account' : 'Log in';
+  $e('authSwitch').innerHTML = mode === 'signup'
+    ? 'Already have an account? <a href="#" style="color:var(--accent)" onclick="event.preventDefault();N.showAuth(\'login\')">Log in</a>'
+    : 'Need an account? <a href="#" style="color:var(--accent)" onclick="event.preventDefault();N.showAuth(\'signup\')">Sign up</a>';
+  $e('authSignupBlock').style.display = mode === 'signup' ? '' : 'none';
+  $e('authError').textContent = '';
+  $e('authModal').classList.add('active');
+};
+N.hideAuth = function(){ $e('authModal').classList.remove('active'); };
+
+N.getRedirectUrl = function(){
+  var c = window.NF_CONFIG || {};
+  if (c.SITE_URL) return c.SITE_URL;
+  return window.location.origin + window.location.pathname;
+};
+
+N.signInDiscord = async function(){
+  if (!N.cloudReady()) { N.toast('Configure config.js first'); return; }
+  if (N.hasAuthCallback()) N.clearOAuthStuck();
+  if (!(await N.waitForCloud(8000))) {
+    var msg = 'Could not reach cloud login. Games still work — try Chrome or disable Opera ad blocker.';
+    if ($e('authModal').classList.contains('active')) $e('authError').textContent = msg;
+    else N.toast(msg);
+    return;
+  }
+  N.ensureAuthClient();
+  $e('authError').textContent = '';
+  try { sessionStorage.setItem('nf-oauth-pending', String(Date.now())); } catch (e) {}
+  var redirectTo = N.getRedirectUrl();
+  var res = await N.auth.client.auth.signInWithOAuth({
+    provider: 'discord',
+    options: {
+      redirectTo: redirectTo,
+      queryParams: { prompt: 'consent' },
+      scopes: 'identify'
+    }
+  });
+  if (res.error) {
+    var msg = N.safeError(res.error, 'Discord login failed');
+    if ($e('authModal').classList.contains('active')) $e('authError').textContent = msg;
+    else N.toast(msg);
+  }
+};
+
+N.submitAuth = async function(){
+  $e('authError').textContent = 'Connecting…';
+  if (!(await N.waitForCloud(8000))) {
+    $e('authError').textContent = 'Cloud login unavailable — try Chrome or disable ad blocker. Games still work offline.';
+    return;
+  }
+  var mode = N.auth.mode, email = $e('authEmail').value.trim(), pass = $e('authPassword').value, user = $e('authUsername').value.trim().toLowerCase();
+  $e('authError').textContent = '';
+  if (!email || !pass) { $e('authError').textContent = 'Email and password required'; return; }
+  if (!N.auth.client) { $e('authError').textContent = 'Auth still loading — try again'; return; }
+  if (mode === 'signup') {
+    if (!/^[a-z0-9_]{3,20}$/.test(user)) { $e('authError').textContent = 'Invalid username format'; return; }
+    var meta = { username: user };
+    var code = $e('authAdminCode').value.trim();
+    if (code) meta.admin_setup_code = code;
+    var res = await N.auth.client.auth.signUp({ email: email, password: pass, options: { data: meta, emailRedirectTo: N.getRedirectUrl() } });
+    if (res.error) {
+      $e('authError').textContent = N.safeError(res.error, 'Sign up failed');
+      return;
+    }
+    if (!res.data.session) {
+      $e('authError').textContent = 'Check your email to confirm your account, then log in. (Or enable auto-confirm in Supabase Auth settings.)';
+      return;
+    }
+    N.auth.user = res.data.user;
+    await N.loadProfile();
+    N.hideAuth();
+    N.toast('Welcome, ' + (N.auth.profile ? N.auth.profile.username : user) + '!');
+  } else {
+    var res2 = await N.auth.client.auth.signInWithPassword({ email: email, password: pass });
+    if (res2.error) {
+      $e('authError').textContent = N.safeError(res2.error, 'Log in failed');
+      return;
+    }
+    N.auth.user = res2.data.user;
+    await N.loadProfile();
+    N.hideAuth();
+    N.toast('Logged in as ' + (N.auth.profile ? N.auth.profile.username : 'player'));
+  }
+};
+
+N.logout = async function(){
+  if (N.auth.client) await N.auth.client.auth.signOut();
+  N.auth.user = null; N.auth.profile = null;
+  N.updateAuthUI();
+  N.toast('Logged out');
+};
+
+N.showLeaderboard = async function(){
+  if (!N.cloudReady()) { N.toast('Configure config.js first'); return; }
+  $e('leaderboardModal').classList.add('active');
+  N.renderLbTabs();
+  await N.renderLeaderboard(N.auth.lbTab || 'global');
+  if (!N.auth.client) N.waitForCloud(6000).then(function(ok){ if (ok) N.renderLeaderboard(N.auth.lbTab || 'global'); });
+};
+N.hideLeaderboard = function(){ $e('leaderboardModal').classList.remove('active'); };
+
+N.renderLbTabs = function(){
+  var html = '';
+  for (var id in N.gameMeta) {
+    html += '<button class="lb-tab' + (N.auth.lbTab === id ? ' active' : '') + '" onclick="N.switchLbTab(\'' + id + '\')">' + N.gameMeta[id].label + '</button>';
+  }
+  $e('lbTabs').innerHTML = html;
+};
+N.switchLbTab = async function(id){ N.auth.lbTab = id; N.renderLbTabs(); await N.renderLeaderboard(id); };
+
+N.renderLeaderboard = async function(tab){
+  var body = $e('leaderboardBody');
+  body.innerHTML = '<div class="lb-empty">Loading…</div>';
+  if (!N.auth.client) {
+    await N.waitForCloud(6000);
+  }
+  if (!N.auth.client) {
+    body.innerHTML = '<div class="lb-empty">Leaderboard unavailable — cloud blocked or slow.<br>Games still work. Try Chrome or turn off Opera ad blocker.</div>';
+    return;
+  }
+  var meta = N.gameMeta[tab];
+  var res;
+  try {
+    res = await N.withTimeout(
+      N.auth.client.from('profiles').select('username,total_score,bests').eq('hidden_from_leaderboard', false).limit(200),
+      10000,
+      'Leaderboard'
+    );
+  } catch (e) {
+    body.innerHTML = '<div class="lb-empty">Leaderboard timed out — try again in a moment.</div>';
+    return;
+  }
+  if (res.error) { body.innerHTML = '<div class="lb-empty">Could not load leaderboard.</div>'; return; }
+  var rows = (res.data || []).map(function(p){
+    var score = tab === 'global' ? (p.total_score || 0) : (p.bests && p.bests[meta.key] !== undefined ? Number(p.bests[meta.key]) : null);
+    return { username: p.username, score: score };
+  }).filter(function(r){
+    if (tab === 'global') return true;
+    if (r.score === null || isNaN(r.score)) return false;
+    if (tab === 'typing' && r.score > N.MAX_TYPING_WPM) return false;
+    return true;
+  });
+  rows.sort(function(a,b){
+    if (a.score === b.score) return a.username.localeCompare(b.username);
+    return meta.lowerBetter ? a.score - b.score : b.score - a.score;
+  });
+  rows = rows.slice(0, 50);
+  if (!rows.length) { body.innerHTML = '<div class="lb-empty">No scores yet — be the first!</div>'; return; }
+  var meName = N.auth.profile ? N.auth.profile.username : null;
+  var h = '<table class="lb-table"><thead><tr><th>#</th><th>Player</th><th>Score</th></tr></thead><tbody>';
+  rows.forEach(function(r, i){
+    var isMe = meName && r.username === meName;
+    h += '<tr class="' + (isMe ? 'you' : '') + '"><td class="lb-rank">' + (i+1) + '</td><td>' + N.escape(r.username) + (isMe ? ' (you)' : '') + '</td><td class="lb-score">' + meta.format(r.score) + '</td></tr>';
+  });
+  h += '</tbody></table>';
+  body.innerHTML = h;
+};
+
+N.showAdmin = async function(){
+  if (!N.auth.profile || !N.auth.profile.is_admin) { N.toast('Admin only'); return; }
+  $e('adminModal').classList.add('active');
+  await N.renderAdmin();
+};
+N.hideAdmin = function(){ $e('adminModal').classList.remove('active'); };
+
+N.renderAdmin = async function(){
+  var body = $e('adminBody');
+  body.innerHTML = '<div class="lb-empty">Loading…</div>';
+  var res = await N.auth.client.from('profiles').select('*').order('username');
+  if (res.error) { body.innerHTML = '<div class="lb-empty">Could not load players.</div>'; return; }
+  var html = '';
+  (res.data || []).forEach(function(p){
+    html += '<div class="admin-player" data-id="' + p.id + '" style="margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--border);">';
+    html += '<div class="admin-row"><strong>' + N.escape(p.username) + '</strong><label style="font-size:0.75rem;color:var(--dim);"><input type="checkbox" data-field="hidden" ' + (p.hidden_from_leaderboard ? 'checked' : '') + '> Hidden from leaderboard</label></div>';
+    html += '<div class="admin-row"><span>Username</span><input data-field="username" value="' + N.escape(p.username) + '"></div>';
+    html += '<div class="admin-row"><span>Total XP</span><input data-field="total_score" type="number" value="' + (p.total_score || 0) + '"></div>';
+    html += '<div class="admin-bests">';
+    for (var gid in N.gameMeta) {
+      if (gid === 'global') continue;
+      var g = N.gameMeta[gid], val = (p.bests && p.bests[g.key] !== undefined) ? p.bests[g.key] : '';
+      html += '<div><label style="font-size:0.65rem;color:var(--dim);">' + g.label + '</label><input data-best="' + g.key + '" type="number" step="any" value="' + val + '" placeholder="—"></div>';
+    }
+    html += '</div>';
+    html += '<button class="btn primary" style="margin-top:10px;" onclick="N.saveAdminPlayer(\'' + p.id + '\')">Save</button>';
+    html += '</div>';
+  });
+  body.innerHTML = html || '<div class="lb-empty">No players yet.</div>';
+};
+
+N.saveAdminPlayer = async function(id){
+  var block = document.querySelector('.admin-player[data-id="' + id + '"]');
+  if (!block) return;
+  var bests = {};
+  block.querySelectorAll('[data-best]').forEach(function(inp){
+    if (inp.value !== '') bests[inp.getAttribute('data-best')] = Number(inp.value);
+  });
+  var payload = {
+    username: block.querySelector('[data-field="username"]').value.trim().toLowerCase(),
+    total_score: Number(block.querySelector('[data-field="total_score"]').value) || 0,
+    hidden_from_leaderboard: block.querySelector('[data-field="hidden"]').checked,
+    bests: N.sanitizeBests(bests)
+  };
+  if (!/^[a-z0-9_]{3,20}$/.test(payload.username)) { N.toast('Invalid username'); return; }
+  var res = await N.auth.client.from('profiles').update(payload).eq('id', id).select().maybeSingle();
+  if (res.error) { N.toast(N.safeError(res.error, 'Save failed')); return; }
+  N.toast('Saved ' + payload.username);
+  if (N.auth.user && N.auth.user.id === id && res.data) { N.auth.profile = res.data; N.mergeProfileToLocal(res.data); }
+  await N.renderAdmin();
+};
+
+N.pct=function(test,val){
+  var refs={reaction:[[200,1],[250,5],[300,25],[350,50],[400,75],[500,90]],sequence:[[10,1],[8,5],[6,25],[4,50],[3,75],[2,90]],aim:[[10000,1],[15000,10],[20000,30],[25000,55],[30000,80]],number:[[12,1],[9,5],[7,25],[5,50],[4,75],[3,90]],chimp:[[9,1],[7,5],[5,25],[3,50],[2,80],[1,95]],verbal:[[50,1],[30,5],[20,20],[12,50],[8,75],[4,90]],stroop:[[95,1],[85,5],[75,20],[60,50],[45,80]],math:[[40,1],[25,5],[15,25],[8,50],[4,80]],typing:[[80,1],[60,5],[45,25],[30,50],[20,80]],visual:[[80,1],[50,5],[30,25],[15,50],[5,80]],time:[[95,1],[85,5],[70,20],[55,50],[40,80]],nback:[[5,1],[3,5],[2,25],[1,50]],gng:[[95,1],[85,5],[70,20],[55,50],[40,80]],pattern:[[70,1],[45,5],[30,25],[15,50],[5,80]],tracking:[[50,1],[30,5],[18,25],[10,50],[4,80]],flanker:[[95,1],[85,5],[75,20],[60,50],[45,80]],scramble:[[15,1],[10,5],[6,25],[3,50],[1,80]],rotation:[[60,1],[40,5],[25,25],[12,50],[5,80]],audio:[[12,1],[9,5],[7,25],[5,50],[3,80]]};
+  var r=refs[test];if(!r)return null;
+  var lb=test==='reaction'||test==='aim';
+  for(var i=0;i<r.length;i++)if(lb?val<=r[i][0]:val>=r[i][0])return r[i][1];
+  return 99;
+};
+
+N.updateUI=function(){
+  var s=N.getLS(),b=s.bests||{};
+  $e('globalScore').textContent=s.totalScore||0;
+  $e('testsTaken').textContent=s.testsTaken||0;
+  var labels={reaction:1,sequence:1,aim:1,number:1,chimp:1,verbal:1,stroop:1,math:1,typing:1,visual:1,time:1,nback:1,gng:1,pattern:1,tracking:1,flanker:1,scramble:1,rotation:1,audio:1};
+  for(var k in labels){var el=$e('best-'+k),v=b[k];
+    if(el)el.innerHTML=v!==undefined?'<span>Best: '+(k==='reaction'||k==='aim'?v+'ms':k==='number'?v+' digits':k==='verbal'||k==='visual'||k==='pattern'||k==='tracking'||k==='rotation'?v+' pts':k==='stroop'||k==='time'||k==='gng'||k==='flanker'?v+'%':k==='typing'?v+' WPM':k==='nback'?v+'-Back':k==='scramble'||k==='audio'?v+' words':v)+'</span>':'';
+  }
+  var top='--';
+  if(b.reaction!==undefined&&b.reaction<200)top='SSS';else if(b.reaction!==undefined&&b.reaction<250)top='SS';else if(b.reaction!==undefined&&b.reaction<300)top='S';else if(b.sequence>=12)top='SS';else if(b.sequence>=8)top='S';else if(b.aim!==undefined&&b.aim<400)top='S';else if(b.number>=10)top='SS';else if(b.number>=7)top='S';else if(b.chimp>=9)top='SS';else if(b.chimp>=6)top='S';else if(b.verbal>=50)top='SS';else if(b.verbal>=25)top='S';else if(b.reaction!==undefined&&b.reaction<350)top='A';else if(b.typing>=80)top='SS';else if(b.typing>=60)top='S';else if(b.math>=40)top='SS';else if(b.math>=25)top='S';else if(b.visual>=80)top='SS';else if(b.visual>=50)top='S';else if(b.stroop>=95)top='SS';else if(b.stroop>=85)top='S';else if(b.time>=95)top='SS';else if(b.time>=80)top='S';  else if(b.nback>=5)top='SS';else if(b.nback>=3)top='S';
+  else if(b.gng>=95)top='SS';else if(b.gng>=85)top='S';
+  else if(b.pattern>=70)top='SS';else if(b.pattern>=45)top='S';
+  else if(b.tracking>=50)top='SS';else if(b.tracking>=30)top='S';
+  else if(b.flanker>=95)top='SS';else if(b.flanker>=85)top='S';
+  else if(b.scramble>=15)top='SS';else if(b.scramble>=10)top='S';
+  else if(b.rotation>=60)top='SS';else if(b.rotation>=40)top='S';
+  else if(b.audio>=12)top='SS';else if(b.audio>=9)top='S';
+  $e('topRank').textContent=top;
+  N.updateLevel();N.renderStats();
+};
+
+// ====== FILTER ======
+N.filterCards=function(cat){
+  var btns=document.querySelectorAll('.tab-btn');
+  btns.forEach(function(b,i){
+    var cats=['all','speed','memory','focus','logic'];
+    b.classList.toggle('active',cats[i]===cat);
+  });
+  var cards=document.querySelectorAll('#cardGrid .card');
+  cards.forEach(function(c){
+    if(cat==='all'||c.dataset.cat===cat)c.classList.remove('hidden-card');
+    else c.classList.add('hidden-card');
+  });
+};
+
+// ====== HISTORY ======
+N.toggleHistory=function(){
+  var p=$e('historyPanel'),v=p.classList.toggle('visible');
+  if(v){
+    var s=N.getLS(),h=s.history||{},b=s.bests||{},html='';
+    var labels={reaction:'Reaction Time (ms)',sequence:'Sequence Memory',aim:'Aim Trainer (ms)',number:'Number Memory (digits)',chimp:'Chimp Test',verbal:'Verbal Memory (pts)',stroop:'Stroop Test (%)',math:'Mental Math (score)',typing:'Typing Speed (WPM)',visual:'Visual Search (pts)',time:'Time Perception (%)',nback:'N-Back (level)',gng:'Go/No-Go (%)',pattern:'Pattern Recog (pts)',tracking:'Ball Tracking (pts)',flanker:'Flanker Task (%)',scramble:'Word Scramble',rotation:'Mental Rotation (pts)',audio:'Audio Sequence'};
+    for(var k in labels){
+      var e=(h[k]||[]).slice().reverse().slice(0,12);
+      var spark=((h[k]||[]).map(function(x){return x.value;})).slice(-15);
+      html+='<div class="history-section"><h4>'+labels[k]+' '+N.sparklineHtml(spark,18)+'</h4>';
+      if(e.length===0)html+='<div class="history-empty">No data yet</div>';
+      else{var bestShown=false;e.forEach(function(x){var d=new Date(x.date),ds=d.toLocaleDateString()+' '+d.toTimeString().slice(0,5),isB=!bestShown&&b[k]!==undefined&&x.value===b[k];if(isB)bestShown=true;
+        html+='<div class="history-row"><span class="val" style="color:var(--accent)">'+x.value+(isB?' <span style="color:var(--gold);font-size:0.6rem">&star; BEST</span>':'')+'</span><span class="date">'+ds+'</span></div>';});}
+      html+='</div>';
+    }
+    $e('historyContent').innerHTML=html||'<div class="history-empty">No tests completed yet.</div>';
+  }
+};
+
+// ====== TEST SCREEN ======
+N.active=false;N.current=null;
+N._fxAllowed=function(){return !$e('testScreen').classList.contains('active');};
+N.open=function(){document.body.classList.add('in-test');$e('testScreen').classList.add('active');$e('app').style.display='none';};
+N.exit=function(){
+  if(N._dailyMode){var origExit=N._dailyOrigExit;N._dailyMode=false;N.active=false;N.current=null;N.exit=origExit;origExit.call(N);return;}
+  N.active=false;N.current=null;document.body.classList.remove('in-test');$e('testScreen').classList.remove('active');$e('app').style.display='';$c().innerHTML='';document.body.style.background='';document.onkeydown=null;
+};
+document.addEventListener('keydown',function(e){if(e.key==='Escape'&&N.current)N.exit();});
+
+// ====== COUNTDOWN ======
+N.countdown=function(cb){
+  var n=3,el=$c();
+  el.innerHTML='<div class="countdown" style="animation:pulse 0.8s ease">'+n+'</div>';N.sfx.tick();
+  var iv=setInterval(function(){n--;if(n<=0){clearInterval(iv);N.sfx.go();el.innerHTML='<div class="countdown" style="color:var(--success);animation:countPop 0.5s ease">GO!</div>';setTimeout(cb,500);}else{N.sfx.tick();el.innerHTML='<div class="countdown" style="animation:pulse 0.8s ease">'+n+'</div>';}},800);
+};
+
+// ====== LEVEL ======
+N.levels=[{name:'NOVICE',xp:0},{name:'BEGINNER',xp:50},{name:'TRAINEE',xp:120},{name:'ADEPT',xp:220},{name:'SKILLED',xp:360},{name:'EXPERT',xp:540},{name:'MASTER',xp:780},{name:'GRANDMASTER',xp:1100},{name:'LEGEND',xp:1500}];
+N.updateLevel=function(){
+  var s=N.getLS(),xp=s.totalScore||0,lvl=N.levels[0],nxt=N.levels[1];
+  for(var i=N.levels.length-1;i>=0;i--){if(xp>=N.levels[i].xp){lvl=N.levels[i];nxt=N.levels[i+1]||{xp:xp+1000};break;}}
+  $e('levelBadge').textContent=lvl.name;
+  var pct=nxt.xp-lvl.xp>0?Math.round((xp-lvl.xp)/(nxt.xp-lvl.xp)*100):100;
+  $e('levelFill').style.width=pct+'%';$e('levelNext').textContent=xp+' / '+(nxt?nxt.xp:'?')+' XP';
+};
+
+// ====== ACHIEVEMENTS ======
+N.toast=function(msg){var c=$e('toastContainer'),t=document.createElement('div');t.className='toast';t.textContent=msg;c.appendChild(t);setTimeout(function(){t.remove();},3000);};
+N.checkAchievements=function(){
+  var s=N.getLS(),t=(s.testsTaken||0),b=s.bests||{},h=s.history||{};
+  var prevAch=s.achievements||{};
+  var check=function(k,cond,msg){if(!prevAch[k]&&cond){prevAch[k]=true;N.toast(msg);}};
+  check('first',t>=1,'First test completed!');
+  check('ten',t>=10,'10 tests done!');
+  check('fifty',t>=50,'50 tests! Dedicated!');
+  check('speed',b.reaction&&b.reaction<250,'Lightning reflexes!');
+  check('memory',b.sequence&&b.sequence>=8,'Memory master!');
+  check('aim',b.aim&&b.aim<15000,'Sharpshooter!');
+  check('numbers',b.number&&b.number>=9,'Number genius!');
+  check('chimp',b.chimp&&b.chimp>=7,'Smarter than a chimp!');
+  check('words',b.verbal&&b.verbal>=30,'Word wizard!');
+  check('stroopAch',b.stroop&&b.stroop>=90,'Unshakeable focus!');
+  check('mathAch',b.math&&b.math>=30,'Human calculator!');
+  check('typingAch',b.typing&&b.typing>=70,'Speed typist!');
+  check('visualAch',b.visual&&b.visual>=60,'Eagle eye!');
+  check('timeAch',b.time&&b.time>=80,'Clock master!');
+  check('nbackAch',b.nback&&b.nback>=4,'Working memory beast!');
+  check('gngAch',b.gng&&b.gng>=90,'Impulse control master!');
+  check('patternAch',b.pattern&&b.pattern>=60,'Pattern genius!');
+  check('trackingAch',b.tracking&&b.tracking>=40,'Eagle tracker!');
+  check('flankerAch',b.flanker&&b.flanker>=90,'Laser focus!');
+  check('scrambleAch',b.scramble&&b.scramble>=12,'Word master!');
+  check('rotationAch',b.rotation&&b.rotation>=50,'Spatial genius!');
+  check('audioAch',b.audio&&b.audio>=10,'Audio memory beast!');
+  check('allTests',Object.keys(b).length>=19,'Every test completed!');
+  s.achievements=prevAch;N.setLS(s);
+};
+
+// ====== RESET DATA ======
+N.resetData=function(){
+  if(confirm('Reset ALL scores, history, and achievements?')){
+    localStorage.removeItem('nf');N.updateUI();N.renderStats();N.toast('All data reset.');
+    var h=$e('historyContent');if(h)h.innerHTML='<div class="history-empty">All data cleared.</div>';
+  }
+};
+
+// ====== PRACTICE MODE ======
+N._practice=false;
+N.togglePractice=function(){
+  N._practice=!N._practice;
+  var b=$e('practiceToggle');
+  if(N._practice){b.classList.add('practice-active');b.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><circle cx="12" cy="12" r="9"></circle><circle cx="12" cy="12" r="4"></circle></svg>';N.toast('Practice mode ON — scores not saved');}
+  else{b.classList.remove('practice-active');b.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><circle cx="12" cy="12" r="9"></circle><circle cx="12" cy="12" r="4"></circle></svg>';N.toast('Scoring mode ON');}
+};
+N.record=function(name,val,higher){
+  if(N._practice) return false;
+  if(name==='typing'&&val>N.MAX_TYPING_WPM) return false;
+  var s=N.getLS();if(!s.bests)s.bests={};if(!s.history)s.history={};if(!s.history[name])s.history[name]=[];
+  var prev=s.bests[name],imp=prev===undefined||(higher?val>prev:val<prev);
+  if(imp){s.bests[name]=val;s.totalScore=(s.totalScore||0)+Math.max(1,Math.floor(Math.abs(val-(prev||0))/2));N.confetti(80);N.sfx.achieve();}
+  s.testsTaken=(s.testsTaken||0)+1;s.totalScore=(s.totalScore||0)+1;
+  s.history[name].push({value:val,date:Date.now()});if(s.history[name].length>50)s.history[name]=s.history[name].slice(-50);
+  s.bests=N.sanitizeBests(s.bests);
+  N.setLS(s);N.updateUI();N.renderStats();N.checkAchievements();if(N.syncProfile)N.syncProfile(true);return imp;
+};
+
+// ====== STATS DASHBOARD ======
+N.renderStats=function(){
+  var s=N.getLS(),b=s.bests||{},h=s.history||{},html='';
+  var labels={reaction:'Reaction',sequence:'Sequence',aim:'Aim Trainer',number:'Numbers',chimp:'Chimp',verbal:'Verbal',stroop:'Stroop',math:'Math',typing:'Typing',visual:'Visual',time:'Time',nback:'N-Back',gng:'Go/No-Go',pattern:'Pattern',tracking:'Tracking',flanker:'Flanker',scramble:'Scramble',rotation:'Rotation',audio:'Audio'};
+  var units={reaction:'ms',sequence:'',aim:'ms',number:'dig',chimp:'',verbal:'pts',stroop:'%',math:'',typing:'WPM',visual:'pts',time:'%',nback:'-B',gng:'%',pattern:'pts',tracking:'pts',flanker:'%',scramble:'',rotation:'pts',audio:''};
+  var maxes={reaction:500,sequence:15,aim:30000,number:15,chimp:10,verbal:50,stroop:100,math:40,typing:100,visual:80,time:100,nback:6,gng:100,pattern:80,tracking:60,flanker:100,scramble:20,rotation:70,audio:15};
+  var any=false;
+  for(var k in labels){
+    var best=b[k],hist=(h[k]||[]).map(function(x){return x.value;});
+    var avg=hist.length>0?Math.round(hist.reduce(function(a,b){return a+b;},0)/hist.length):0;
+    if(best!==undefined||hist.length>0)any=true;
+    var pct=best!==undefined?Math.min(100,Math.round((best/maxes[k])*100)):0;
+    html+='<div class="stat-card"><div class="test-name">'+labels[k]+'</div><div class="test-best">'+(best!==undefined?best+units[k]:'--')+'</div><div class="test-avg">avg '+(avg||'--')+units[k]+' &middot; '+(hist.length||0)+' runs</div><div class="test-bar"><div class="test-bar-fill" style="width:'+pct+'%"></div></div></div>';
+  }
+  if(!any)html='<div style="text-align:center;color:var(--dim);font-size:0.8rem;padding:12px;">Complete some tests to see your stats dashboard.</div>';
+  var el=$e('statsDashContent');if(el)el.innerHTML=N.radarChart()+'<div class="stats-grid">'+html+'</div>';
+};
+
+// ====== CLICK RIPPLE + PARTICLES ======
+N._particleMaxMs=10000;
+N._particleColors=['#ff3d71','#00e5ff','#ffd740','#b347ea','#00e676'];
+N._isDecorativeClick=function(target){
+  if(!N._fxAllowed())return false;
+  return !target.closest('.app, .modal-overlay, .test-screen, .shortcut-overlay, .toast-container, .sound-toggle, .volume-slider-wrap, .daily-badge, button, a, input, textarea, select, label, .card, .btn, .stat-pill, .history-panel, .modal, .stats-dash, .user-bar');
+};
+N._animateParticle=function(p,opacityStep){
+  var born=performance.now();
+  setTimeout(function(){if(p.parentNode)p.remove();},N._particleMaxMs);
+  var iv=setInterval(function(){
+    if(performance.now()-born>=N._particleMaxMs){clearInterval(iv);if(p.parentNode)p.remove();return;}
+    p._o=(p._o||1)-opacityStep;p._dx=(p._dx||0)*0.9;p._dy=(p._dy||0)+0.3;
+    p.style.transform='translate('+p._dx+'px,'+p._dy+'px)';p.style.opacity=p._o;
+    if(p._o<=0){clearInterval(iv);p.remove();}
+  },16);
+};
+N._spawnDot=function(x,y,size){
+  if(!N._fxAllowed())return;
+  var p=document.createElement('div');
+  p.className='click-particle';
+  p.style.width=size+'px';p.style.height=size+'px';
+  p.style.background=N._particleColors[Math.floor(Math.random()*N._particleColors.length)];
+  p.style.left=x+'px';p.style.top=y+'px';
+  p.style.boxShadow='0 0 4px currentColor';
+  document.body.appendChild(p);
+  var a=Math.random()*Math.PI*2,d=Math.random()*15+5;
+  p._dx=Math.cos(a)*d;p._dy=Math.sin(a)*d;p._o=1;
+  N._animateParticle(p,0.04);
+};
+N.burstParticles=function(el,n){
+  if(!N._fxAllowed())return;
+  n=n||12;if(!el||!el.parentNode)return;
+  var host=el.parentNode;
+  if(getComputedStyle(host).position==='static')host.style.position='relative';
+  var rect=el.getBoundingClientRect(),hostRect=host.getBoundingClientRect();
+  var cx=rect.left-hostRect.left+rect.width/2,cy=rect.top-hostRect.top+rect.height/2;
+  for(var i=0;i<n;i++){
+    var p=document.createElement('div');
+    p.className='click-particle';
+    p.style.position='absolute';
+    p.style.width='6px';p.style.height='6px';
+    p.style.background=N._particleColors[Math.floor(Math.random()*N._particleColors.length)];
+    p.style.left=cx+'px';p.style.top=cy+'px';
+    p.style.boxShadow='0 0 6px currentColor';
+    host.appendChild(p);
+    var angle=Math.random()*Math.PI*2,dist=Math.random()*30+20;
+    p._dx=Math.cos(angle)*dist;p._dy=Math.sin(angle)*dist;p._o=1;
+    N._animateParticle(p,0.03);
+  }
+};
+document.addEventListener('click',function(e){
+  if(!N._isDecorativeClick(e.target))return;
+  var r=document.createElement('div');r.className='click-ripple';r.style.left=e.clientX+'px';r.style.top=e.clientY+'px';document.body.appendChild(r);setTimeout(function(){r.remove();},500);
+  for(var i=0;i<3;i++)N._spawnDot(e.clientX,e.clientY,4);
+});
+
+// ====== FLASH + SPARKLINE ======
+N.flashScreen=function(color){var f=document.createElement('div');f.className='screen-flash';if(color==='gold')f.style.background='rgba(255,215,0,0.2)';document.body.appendChild(f);setTimeout(function(){f.remove();},800);};
+N.sparklineHtml=function(data,h){if(!data||data.length<2)return'';var mv=Math.max.apply(null,data.concat([1])),hh=h||18;return'<span class="sparkline">'+data.map(function(v){var p=Math.max(2,(v/mv)*hh);return'<span class="sparkline-bar" style="height:'+p+'px"></span>';}).join('')+'</span>';};
+
+// ====== TEST DISPATCH ======
+N.start=function(type){N.current=type;N.active=true;N.open();
+  switch(type){case'reaction':N._reactionIntro();break;case'sequence':N._sequenceIntro();break;case'aim':N._aimIntro();break;case'number':N._numberIntro();break;case'chimp':N._chimpIntro();break;case'verbal':N._verbalIntro();break;case'stroop':N._stroopIntro();break;case'math':N._mathIntro();break;case'typing':N._typingIntro();break;case'visual':N._visualIntro();break;case'time':N._timeIntro();break;case'nback':N._nbackIntro();break;case'gng':N._gngIntro();break;case'pattern':N._patternIntro();break;case'tracking':N._trackingIntro();break;case'flanker':N._flankerIntro();break;case'scramble':N._scrambleIntro();break;case'rotation':N._rotationIntro();break;case'audio':N._audioIntro();break;}
+};
+
+// ====== REACTION TIME ======
+N._rt={trials:[],idx:0};
+N._reactionIntro=function(){$c().innerHTML='<div class="instruction"><h2>Reaction Time</h2><p>Click when the red screen turns green.<br>Wait for it — random delay each time.</p><p style="color:var(--dim);font-size:0.75rem;">5 trials &middot; Too early = you redo that trial</p><button class="btn primary" onclick="N._reactionStart()">Start</button></div>';};
+N._reactionStart=function(){N._rt.trials=[];N._rt.idx=0;N.countdown(function(){if(N.current==='reaction')N._reactionTrial();});};
+N._reactionTrial=function(){
+  var rt=N._rt;if(!N.active||rt.idx>=5){N._reactionDone();return;}
+  var delay=1000+Math.random()*3000,ready=false,th=null,st=0;
+  $c().innerHTML='<div class="reaction-area idle" id="rea"><div class="reaction-text" id="retxt">Trial '+(rt.idx+1)+'/5<br><br>Click when green</div></div><div class="reaction-result" id="reres"></div><div class="progress-wrap"><div class="progress-fill" style="width:'+((rt.idx/5)*100)+'%"></div></div>';
+  var area=$e('rea'),txt=$e('retxt'),res=$e('reres');
+  function clean(){area.onclick=null;clearTimeout(th);}
+  area.onclick=function(){if(!N.active)return;if(!ready){clean();N.sfx.fail();N.shake(4);area.className='reaction-area too-early';txt.textContent='Too early! Wait for green.';res.textContent='';setTimeout(function(){if(N.active){rt.idx++;N._reactionTrial();}},1200);return;}clean();N.sfx.click();var t=Math.round(performance.now()-st);rt.trials.push(t);var cl=t<200?'var(--success)':t<300?'var(--accent)':t<400?'var(--warning)':'var(--accent2)';res.style.color=cl;res.textContent=t+'ms';rt.idx++;setTimeout(function(){if(N.active)N._reactionTrial();},1200);};
+  th=setTimeout(function(){ready=true;st=performance.now();area.className='reaction-area ready';txt.textContent='CLICK NOW!';},delay);
+};
+N._reactionDone=function(){
+  var tr=N._rt.trials;if(tr.length===0){N.exit();return;}
+  var avg=Math.round(tr.reduce(function(a,b){return a+b;},0)/tr.length),best=Math.min.apply(null,tr),worst=Math.max.apply(null,tr);
+  var gd=avg<200?'SSS':avg<250?'SS':avg<300?'S':avg<350?'A':avg<450?'B':'C',gc=avg<250?'var(--success)':avg<350?'var(--accent)':avg<450?'var(--warning)':'var(--accent2)';
+  if(avg<200)N.flashScreen('gold');var pct=N.pct('reaction',avg),imp=N.record('reaction',avg,false),pctStr='';
+  if(pct!==null)pctStr=' &middot; <span style="font-size:0.8rem;color:'+(pct<=5?'var(--gold)':pct<=25?'var(--success)':'var(--accent)')+'">Top '+pct+'%</span>';
+  $c().innerHTML='<div class="results"><div class="score">'+avg+'<span style="font-size:1.3rem">ms</span></div><div class="grade" style="color:'+gc+'">'+gd+pctStr+'</div><div class="stats">Best: '+best+'ms &middot; Worst: '+worst+'ms<br>Trials: '+tr.join('ms, ')+'ms<br>'+(imp?'<span style="color:var(--success)">NEW PERSONAL BEST!</span><br>':'')+'</div><button class="btn primary" onclick="N._reactionIntro()">Try Again</button><button class="btn" onclick="N.exit()">Back</button></div>';
+};
+
+// ====== SEQUENCE MEMORY ======
+N._sq={};
+N._sequenceIntro=function(){$c().innerHTML='<div class="instruction"><h2>Sequence Memory</h2><p>Watch the pattern, then repeat it.<br>+1 step each round. How far can you go?</p><button class="btn primary" onclick="N.countdown(function(){N._sequenceGame();})">Start</button></div>';};
+N._sequenceGame=function(){N._sq={seq:[],pi:0,round:1,show:true};N._seqNewRound();};
+N._seqNewRound=function(){N._sq.seq.push(Math.floor(Math.random()*4));N._sq.pi=0;N._sq.show=true;N._seqShow();};
+N._seqShow=function(){
+  var s=N._sq;
+  $c().innerHTML='<div class="seq-grid"><div class="seq-tile" data-idx="0"></div><div class="seq-tile" data-idx="1"></div><div class="seq-tile" data-idx="2"></div><div class="seq-tile" data-idx="3"></div></div><div style="margin-top:12px;color:var(--dim);font-size:0.85rem;" id="sqMsg">Round '+s.round+' &middot; Watch...</div><div class="progress-wrap"><div class="progress-fill" style="width:'+Math.min(100,(s.round/20)*100)+'%"></div></div>';
+  var tiles=document.querySelectorAll('.seq-tile'),i=0,iv=setInterval(function(){if(i>0)tiles[s.seq[i-1]].classList.remove('lit');if(i>=s.seq.length){clearInterval(iv);s.show=false;$e('sqMsg').textContent='Round '+s.round+' \u00B7 Your turn!';N._seqEnable();return;}tiles[s.seq[i]].classList.add('lit');i++;},450);
+};
+N._seqEnable=function(){
+  var s=N._sq,tiles=document.querySelectorAll('.seq-tile');
+  tiles.forEach(function(t){t.onclick=function(){if(s.show)return;var idx=parseInt(t.dataset.idx);if(idx===s.seq[s.pi]){N.sfx.click();t.classList.add('active');setTimeout(function(){t.classList.remove('active');},180);s.pi++;if(s.pi>=s.seq.length){s.round++;N.sfx.ok();$e('sqMsg').textContent='Correct! Next...';setTimeout(function(){N._seqNewRound();},700);}}else{N.sfx.fail();N.shake(6);t.classList.add('wrong');tiles.forEach(function(x){x.onclick=null;});N._seqDone();}};});
+};
+N._seqDone=function(){
+  var sc=N._sq.round-1,gd=sc>=12?'SSS':sc>=9?'SS':sc>=7?'S':sc>=5?'A':sc>=3?'B':'C',gc=sc>=7?'var(--success)':sc>=4?'var(--accent)':sc>=2?'var(--warning)':'var(--accent2)';
+  if(sc>=12)N.flashScreen('gold');var pct=N.pct('sequence',sc),imp=N.record('sequence',sc,true),pctStr=pct!==null?' &middot; <span style="font-size:0.8rem;color:'+(pct<=5?'var(--gold)':pct<=25?'var(--success)':'var(--accent)')+'">Top '+pct+'%</span>':'';
+  $c().innerHTML='<div class="results"><div class="score">'+sc+'</div><div class="grade" style="color:'+gc+'">'+gd+pctStr+'</div><div class="stats">'+sc+' steps in sequence '+(sc+1)+'<br>'+(imp?'<span style="color:var(--success)">NEW PERSONAL BEST!</span><br>':'')+'</div><button class="btn primary" onclick="N.countdown(function(){N._sequenceGame();})">Try Again</button><button class="btn" onclick="N.exit()">Back</button></div>';
+};
+
+// ====== AIM TRAINER ======
+N._am={};
+N._aimIntro=function(){$c().innerHTML='<div class="instruction"><h2>Aim Trainer</h2><p>Pop 30 targets fast. Gold=3x, Blue=2x.<br>Keep the combo alive — miss resets it!</p><button class="btn primary" onclick="N.countdown(function(){N._aimGame();})">Start</button></div>';};
+N._aimGame=function(){
+  var hits=0,total=0,miss=0,st=performance.now(),combo=0,mc=0,TOT=30;
+  function spawn(){if(!N.active)return;if(total>=TOT){N._aimDone(st,hits,miss,mc);return;}var area=$e('aimArea');if(!area)return;var old=area.querySelector('.aim-target');if(old){old.remove();combo=0;miss++;}var t=document.createElement('div');t.className='aim-target';var g=Math.random()<0.12,b=!g&&Math.random()<0.15;if(g)t.classList.add('gold');if(b)t.classList.add('bonus');var pad=30,x=pad+Math.random()*(area.clientWidth-pad*2),y=pad+Math.random()*(area.clientHeight-pad*2);t.style.left=x+'px';t.style.top=y+'px';t.onclick=function(e){e.stopPropagation();combo++;if(combo>mc)mc=combo;var mult=g?3:b?2:1;hits+=mult;total++;if(g)N.sfx.gold();else if(b)N.sfx.bonus();else{N.sfx.hit();if(combo>=10)N.sfx.combo();}t.remove();spawn();};area.appendChild(t);var to=g?550:b?800:1300;setTimeout(function(){if(t.parentNode){t.remove();combo=0;miss++;total++;spawn();}},to);}
+  $c().innerHTML='<div class="aim-area" id="aimArea"><div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:var(--dim);font-size:1.1rem;pointer-events:none;">STARTING...</div></div><div style="margin-top:10px;color:var(--dim);font-size:0.85rem;" id="aimScore">0 pts &middot; 0/'+TOT+'</div><div class="progress-wrap"><div class="progress-fill" id="aimProgress" style="width:0%"></div></div>';
+  $e('aimArea').onclick=function(e){if(e.target===$e('aimArea')){combo=0;miss++;}};
+  setTimeout(spawn,600);
+  var si=setInterval(function(){if(!N.active){clearInterval(si);return;}var se=$e('aimScore'),pe=$e('aimProgress');if(se)se.innerHTML=hits+' pts &middot; '+total+'/'+TOT+(combo>=5?' &middot; '+combo+'':'');if(pe)pe.style.width=Math.min(100,(total/TOT)*100)+'%';if(total>=TOT)clearInterval(si);},100);
+};
+N._aimDone=function(st,hits,miss,mc){
+  var el=Math.round(performance.now()-st),acc=Math.round((30-miss)/30*100),gd=el<8000&&miss<5?'SSS':el<12000&&miss<8?'SS':el<16000?'S':el<22000?'A':'B',gc=el<12000?'var(--success)':el<18000?'var(--accent)':el<25000?'var(--warning)':'var(--accent2)';
+  if(el<8000)N.flashScreen('gold');var pct=N.pct('aim',el),imp=N.record('aim',el,false),pctStr=pct!==null?' &middot; <span style="font-size:0.8rem;color:'+(pct<=5?'var(--gold)':pct<=25?'var(--success)':'var(--accent)')+'">Top '+pct+'%</span>':'';
+  $c().innerHTML='<div class="results"><div class="score">'+el+'<span style="font-size:1.3rem">ms</span></div><div class="grade" style="color:'+gc+'">'+gd+pctStr+'</div><div class="stats">'+hits+' pts &middot; '+acc+'% acc &middot; '+miss+' missed<br>'+(mc>=5?'Best combo: '+mc+'<br>':'')+(imp?'<span style="color:var(--success)">NEW PERSONAL BEST!</span><br>':'')+'</div><button class="btn primary" onclick="N.countdown(function(){N._aimGame();})">Try Again</button><button class="btn" onclick="N.exit()">Back</button></div>';
+};
+
+// ====== NUMBER MEMORY ======
+N._nm={};
+N._numberIntro=function(){$c().innerHTML='<div class="instruction"><h2>Number Memory</h2><p>Number appears briefly. Type it back.<br>+1 digit each level. Avg person: 7 digits.</p><button class="btn primary" onclick="N.countdown(function(){N._numberGame();})">Start</button></div>';};
+N._numberGame=function(){N._nm={level:1,num:''};N._numberLevel();};
+N._numberLevel=function(){if(!N.active)return;var l=N._nm;l.num='';for(var i=0;i<l.level;i++)l.num+=Math.floor(Math.random()*10);var dt=Math.max(2000,l.level*750);$c().innerHTML='<div class="num-display">'+l.num+'</div><div style="color:var(--dim);font-size:0.85rem;">Level '+l.level+' &middot; Memorize</div><div class="progress-wrap"><div class="progress-fill" style="width:'+Math.min(100,(l.level/15)*100)+'%"></div></div>';setTimeout(function(){if(!N.active)return;$c().innerHTML='<div style="margin-bottom:16px;color:var(--dim);">Level '+l.level+' \u00B7 Enter:</div><input class="num-input" id="numInput" type="text" inputmode="numeric" autofocus maxlength="'+l.level+'" autocomplete="off"><br><button class="btn primary" id="numSubmit" style="margin-top:14px;">Submit</button>';var inp=$e('numInput'),btn=$e('numSubmit');inp.focus();function chk(){var v=inp.value.replace(/\D/g,'');if(v===l.num){N.sfx.ok();l.level++;N._numberLevel();}else{N.sfx.fail();N.shake(4);N._numberDone(l.level-1,l.num,v);}}btn.onclick=chk;inp.addEventListener('keydown',function(e){if(e.key==='Enter')chk();});},dt);};
+N._numberDone=function(sc,cor,giv){
+  var gd=sc>=12?'SSS':sc>=9?'SS':sc>=7?'S':sc>=5?'A':sc>=3?'B':'C',gc=sc>=7?'var(--success)':sc>=5?'var(--accent)':sc>=3?'var(--warning)':'var(--accent2)';
+  if(sc>=12)N.flashScreen('gold');var pct=N.pct('number',sc),imp=N.record('number',sc,true),pctStr=pct!==null?' &middot; <span style="font-size:0.8rem;color:'+(pct<=5?'var(--gold)':pct<=25?'var(--success)':'var(--accent)')+'">Top '+pct+'%</span>':'';
+  $c().innerHTML='<div class="results"><div class="score">'+sc+'<span style="font-size:1.3rem"> digits</span></div><div class="grade" style="color:'+gc+'">'+gd+pctStr+'</div><div class="stats">Correct: '+cor+' &middot; You typed: '+(giv||'...')+'<br>'+(imp?'<span style="color:var(--success)">NEW PERSONAL BEST!</span><br>':'')+'</div><button class="btn primary" onclick="N.countdown(function(){N._numberGame();})">Try Again</button><button class="btn" onclick="N.exit()">Back</button></div>';
+};
+
+// ====== CHIMP TEST ======
+N._ch={};
+N._chimpIntro=function(){$c().innerHTML='<div class="instruction"><h2>Chimp Test</h2><p>Memorize number positions. Click in order 1,2,3...<br>Chimps score 6-9. Starts at 4 numbers.</p><button class="btn primary" onclick="N.countdown(function(){N._chimpGame();})">Start</button></div>';};
+N._chimpGame=function(){N._ch={level:1,grid:3,pos:{},click:0};N._chimpNew();};
+N._chimpNew=function(){var ch=N._ch;ch.click=0;var total=Math.min(ch.level+3,ch.grid*ch.grid),cells=[];ch.pos={};for(var r=0;r<ch.grid;r++)for(var c=0;c<ch.grid;c++)cells.push({r:r,c:c});for(var i=cells.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1)),tmp=cells[i];cells[i]=cells[j];cells[j]=tmp;}for(var i=0;i<total;i++)ch.pos[cells[i].r+','+cells[i].c]=i+1;if(ch.level>=6)ch.grid=5;else if(ch.level>=4)ch.grid=4;N._chimpRender(true);setTimeout(function(){if(N.active)N._chimpRender(false);},Math.max(2000,total*500));};
+N._chimpRender=function(show){var ch=N._ch,h='<div class="chimp-grid" style="grid-template-columns:repeat('+ch.grid+',1fr);grid-template-rows:repeat('+ch.grid+',1fr);">';for(var r=0;r<ch.grid;r++)for(var c=0;c<ch.grid;c++){var k=r+','+c,n=ch.pos[k]||'',ex=show?'showing':(n?'hidden':'');h+='<div class="chimp-cell '+ex+'" data-key="'+k+'" data-num="'+n+'">'+(show?n:'')+'</div>';}h+='</div><div style="margin-top:12px;color:var(--dim);font-size:0.85rem;">'+(show?'Memorize...':'Click 1, 2, 3...')+'</div><div style="margin-top:2px;color:var(--dim);font-size:0.75rem;">Level '+ch.level+' &middot; '+Object.keys(ch.pos).length+' numbers</div>';$c().innerHTML=h;if(!show){var cells=document.querySelectorAll('.chimp-cell');cells.forEach(function(cell){cell.onclick=function(){var num=parseInt(cell.dataset.num);if(!num||cell.classList.contains('clicked'))return;if(num===ch.click+1){N.sfx.click();ch.click++;cell.classList.add('correct');cell.textContent=num;setTimeout(function(){cell.classList.add('clicked');cell.classList.remove('correct');},300);if(ch.click>=Object.keys(ch.pos).length){N.sfx.ok();ch.level++;ch.grid=ch.level>=6?5:ch.level>=4?4:3;$c().querySelector('div:last-child').textContent='Correct! Next...';setTimeout(function(){N._chimpNew();},700);}}else{N.sfx.fail();N.shake(6);cell.classList.add('wrong');cell.textContent=num;N._chimpDone(ch.level-1);}};});}};
+N._chimpDone=function(sc){
+  var gd=sc>=8?'SSS':sc>=6?'SS':sc>=4?'S':sc>=2?'A':'B',gc=sc>=6?'var(--success)':sc>=4?'var(--accent)':sc>=3?'var(--warning)':'var(--accent2)';
+  if(sc>=8)N.flashScreen('gold');var pct=N.pct('chimp',sc),imp=N.record('chimp',sc,true),pctStr=pct!==null?' &middot; <span style="font-size:0.8rem;color:'+(pct<=5?'var(--gold)':pct<=25?'var(--success)':'var(--accent)')+'">Top '+pct+'%</span>':'';
+  $c().innerHTML='<div class="results"><div class="score">'+sc+'</div><div class="grade" style="color:'+gc+'">'+gd+pctStr+'</div><div class="stats">'+sc+' sets ordered correctly<br>'+(sc>=7?'You beat the chimp!':'Chimps score 6-9...')+'<br>'+(imp?'<span style="color:var(--success)">NEW PERSONAL BEST!</span><br>':'')+'</div><button class="btn primary" onclick="N.countdown(function(){N._chimpGame();})">Try Again</button><button class="btn" onclick="N.exit()">Back</button></div>';
+};
+
+// ====== VERBAL MEMORY ======
+N._vm={};
+N._wordBank=['apple','bridge','castle','dragon','eagle','forest','garden','hammer','island','jungle','knight','lemon','mirror','needle','ocean','pencil','quartz','rocket','sunset','temple','umbrella','valley','window','anchor','bottle','candle','dagger','engine','falcon','galaxy','harbor','iceberg','jigsaw','kernel','lantern','marble','napkin','oracle','pearl','quiver','raven','saddle','thunder','velvet','whistle','zipper','badge','coral','emerald','fossil','glacier','horizon','incense','jade','kiwi','lotus','meteor','nova','onyx','phoenix','quill','reef','sapphire','tornado','ultra','vapor','wheat','azure','bronze','crystal','delta','ember','flame','granite','hollow','iron','jazz','kelp','lunar','moss','nebula','olive','prism','ridge','silver','topaz','umber','violet'];
+N._verbalIntro=function(){$c().innerHTML='<div class="instruction"><h2>Verbal Memory</h2><p>Seen this word before in this session?<br>Click SEEN or NEW. 3 lives.</p><p style="color:var(--dim);font-size:0.7rem;">Keyboard: A/S or Arrow keys</p><button class="btn primary" onclick="N.countdown(function(){N._verbalGame();})">Start</button></div>';};
+N._verbalGame=function(){N._vm={seen:{},score:0,total:0,lives:3,cw:'',isNew:null};N._verbalWord();};
+N._verbalWord=function(){var v=N._vm;if(!N.active||v.lives<=0){N._verbalDone(v.score);return;}var showSeen=Object.keys(v.seen).length>3&&Math.random()<0.45,w;if(showSeen){var arr=Object.keys(v.seen);w=arr[Math.floor(Math.random()*arr.length)];v.isNew=false;}else{var avail=N._wordBank.filter(function(x){return!v.seen[x];});if(avail.length===0){var arr=Object.keys(v.seen);w=arr[Math.floor(Math.random()*arr.length)];v.isNew=false;}else{w=avail[Math.floor(Math.random()*avail.length)];v.isNew=true;}}v.cw=w;if(v.isNew)v.seen[w]=true;$c().innerHTML='<div style="font-family:Orbitron,sans-serif;font-size:2.5rem;font-weight:900;margin:32px 0;color:var(--accent);letter-spacing:4px;">'+w.toUpperCase()+'</div><div style="display:flex;gap:16px;"><button class="btn primary" id="vNew" style="min-width:110px;">NEW</button><button class="btn danger" id="vSeen" style="min-width:110px;">SEEN</button></div><div style="margin-top:16px;color:var(--dim);font-size:0.85rem;">Score: '+v.score+' &middot; Lives: '+Array(v.lives+1).join('\u25CF')+Array(4-v.lives).join('\u25CB')+'</div><div class="progress-wrap"><div class="progress-fill" style="width:'+Math.min(100,(v.score/50)*100)+'%"></div></div>';$e('vNew').onclick=function(){N._verbalGuess(true);};$e('vSeen').onclick=function(){N._verbalGuess(false);};document.onkeydown=function(e){if(!N.active||N.current!=='verbal'){document.onkeydown=null;return;}if(e.key==='ArrowLeft'||e.key==='a'||e.key==='A')N._verbalGuess(true);if(e.key==='ArrowRight'||e.key==='s'||e.key==='S')N._verbalGuess(false);};};
+N._verbalGuess=function(g){var v=N._vm,cor=g===v.isNew;if(cor){v.score++;N.sfx.click();}else{v.lives--;N.sfx.fail();N.shake(3);$e('testScreen').style.background='rgba(255,30,30,0.2)';setTimeout(function(){$e('testScreen').style.background='';},150);}v.total++;$c().innerHTML='<div style="text-align:center;"><div style="font-size:1.8rem;color:'+(cor?'var(--success)':'var(--accent2)')+';margin:16px 0;">'+(cor?'\u2713':'\u2717')+'</div><div style="color:var(--dim);">'+(cor?'Correct!':(v.isNew?'Already saw this word':'This is a NEW word'))+'</div></div>';setTimeout(function(){N._verbalWord();},700);};
+N._verbalDone=function(sc){
+  var gd=sc>=50?'SSS':sc>=30?'SS':sc>=20?'S':sc>=10?'A':sc>=5?'B':'C',gc=sc>=20?'var(--success)':sc>=10?'var(--accent)':sc>=5?'var(--warning)':'var(--accent2)';
+  if(sc>=50)N.flashScreen('gold');var pct=N.pct('verbal',sc),imp=N.record('verbal',sc,true),pctStr=pct!==null?' &middot; <span style="font-size:0.8rem;color:'+(pct<=5?'var(--gold)':pct<=25?'var(--success)':'var(--accent)')+'">Top '+pct+'%</span>':'';
+  $c().innerHTML='<div class="results"><div class="score">'+sc+'<span style="font-size:1.3rem"> pts</span></div><div class="grade" style="color:'+gc+'">'+gd+pctStr+'</div><div class="stats">'+(N._vm.lives<=0?'Ran out of lives!':'Complete!')+'<br>'+(imp?'<span style="color:var(--success)">NEW PERSONAL BEST!</span><br>':'')+'</div><button class="btn primary" onclick="N.countdown(function(){N._verbalGame();})">Try Again</button><button class="btn" onclick="N.exit()">Back</button></div>';
+  document.onkeydown=null;
+};
+
+// ====== STROOP ======
+N._st={};
+N._stroopIntro=function(){$c().innerHTML='<div class="instruction"><h2>Stroop Test</h2><p>Name the INK COLOR, not the word.<br>RED written in blue = click BLUE.</p><p style="color:var(--dim);font-size:0.7rem;">20 trials &middot; Your brain will fight you</p><button class="btn primary" onclick="N.countdown(function(){N._stroopGame();})">Start</button></div>';};
+N._stroopGame=function(){
+  var colors=[{name:'RED',hex:'#ff3d71'},{name:'BLUE',hex:'#00b0ff'},{name:'GREEN',hex:'#00e676'},{name:'YELLOW',hex:'#ffd740'},{name:'PURPLE',hex:'#b347ea'},{name:'ORANGE',hex:'#ff6d00'}];
+  N._st={trials:[],idx:0,total:20};
+  function next(){if(!N.active||N._st.idx>=N._st.total){N._stroopDone();return;}var tries=0,st=N._st,word,ink;do{word=colors[Math.floor(Math.random()*colors.length)];ink=colors[Math.floor(Math.random()*colors.length)];tries++;}while(word===ink&&tries<50);st.word=word;st.ink=ink;var btns='';colors.forEach(function(c){btns+='<button class="stroop-btn" style="background:'+c.hex+';" data-color="'+c.name+'">'+c.name+'</button>';});$c().innerHTML='<div class="stroop-word" style="color:'+ink.hex+';">'+word.name+'</div><div style="color:var(--dim);font-size:0.85rem;margin-bottom:12px;">What color is the INK?</div><div class="stroop-btns" id="stBtns">'+btns+'</div><div style="margin-top:12px;color:var(--dim);font-size:0.75rem;">'+(st.idx+1)+'/'+st.total+'</div><div class="progress-wrap"><div class="progress-fill" style="width:'+((st.idx/st.total)*100)+'%"></div></div>';var t0=performance.now();document.querySelectorAll('.stroop-btn').forEach(function(b){b.onclick=function(){var chosen=b.dataset.color,correct=chosen===ink.name;t0=performance.now()-t0;st.trials.push({correct:correct,time:Math.round(t0)});st.idx++;if(correct)N.sfx.click();else{N.sfx.fail();N.shake(3);}$c().innerHTML='<div style="text-align:center;"><div style="font-size:1.8rem;color:'+(correct?'var(--success)':'var(--accent2)')+';margin:16px 0;">'+(correct?'\u2713':'\u2717')+'</div><div style="color:var(--dim);">'+(correct?'Correct! '+Math.round(t0)+'ms':'Wrong — ink was '+ink.name)+'</div></div>';setTimeout(function(){next();},600);};});}
+  next();
+};
+N._stroopDone=function(){var tr=N._st.trials;if(tr.length===0){N.exit();return;}var cor=tr.filter(function(t){return t.correct;}).length,avgMs=Math.round(tr.reduce(function(a,b){return a+b.time;},0)/tr.length),acc=Math.round(cor/tr.length*100);var gd=acc>=95?'SSS':acc>=85?'SS':acc>=75?'S':acc>=60?'A':'B',gc=acc>=85?'var(--success)':acc>=70?'var(--accent)':acc>=55?'var(--warning)':'var(--accent2)';if(acc>=95)N.flashScreen('gold');var imp=N.record('stroop',acc,true);$c().innerHTML='<div class="results"><div class="score">'+acc+'<span style="font-size:1.3rem">%</span></div><div class="grade" style="color:'+gc+'">'+gd+'</div><div class="stats">'+cor+'/'+tr.length+' correct &middot; '+avgMs+'ms avg<br>'+(imp?'<span style="color:var(--success)">NEW PERSONAL BEST!</span><br>':'')+'</div><button class="btn primary" onclick="N.countdown(function(){N._stroopGame();})">Try Again</button><button class="btn" onclick="N.exit()">Back</button></div>';};
+
+// ====== MENTAL MATH ======
+N._mm={};
+N._mathIntro=function(){$c().innerHTML='<div class="instruction"><h2>Mental Math</h2><p>Solve arithmetic fast. 60 seconds.<br>Add, subtract, multiply. Enter = submit.</p><button class="btn primary" onclick="N.countdown(function(){N._mathGame();})">Start</button></div>';};
+N._mathGame=function(){var score=0,ans=0,wr=0,sr=0,bs=0,endTime=0;function mkQ(){var ops=[{s:'+',fn:function(a,b){return a+b;}},{s:'\u2212',fn:function(a,b){return a-b;}},{s:'\u00D7',fn:function(a,b){return a*b;}}];var op=ops[Math.floor(Math.random()*ops.length)],a,b;if(op.s==='\u00D7'){a=Math.floor(Math.random()*12)+2;b=Math.floor(Math.random()*12)+2;}else if(op.s==='\u2212'){a=Math.floor(Math.random()*50)+20;b=Math.floor(Math.random()*a);}else{a=Math.floor(Math.random()*90)+10;b=Math.floor(Math.random()*90)+10;}return{a:a,b:b,op:op,c:op.fn(a,b)};}var q=mkQ(),TIME=60;endTime=performance.now()+TIME*1000;function render(){if(!N.active)return;var rem=Math.max(0,Math.round((endTime-performance.now())/1000));if(rem<=0){N._mathDone(score,ans,wr,bs);return;}$c().innerHTML='<div class="math-problem">'+q.a+' '+q.op.s+' '+q.b+' = ?</div><input class="num-input" id="mathInput" type="text" inputmode="numeric" autofocus maxlength="6" autocomplete="off"><div class="math-timer" id="mathTimer">'+rem+'s</div><div style="color:var(--dim);font-size:0.85rem;">Score: '+score+' &middot; Streak: '+sr+'</div><div class="progress-wrap"><div class="progress-fill" style="width:'+((1-rem/TIME)*100)+'%"></div></div>';var inp=$e('mathInput');inp.focus();function chk(){var v=parseInt(inp.value,10);if(isNaN(v))return;if(v===q.c){N.sfx.click();score++;sr++;ans++;if(sr>bs)bs=sr;}else{N.sfx.fail();sr=0;wr++;ans++;}q=mkQ();render();}inp.addEventListener('keydown',function(e){if(e.key==='Enter')chk();});}render();var timerIv=setInterval(function(){if(!N.active){clearInterval(timerIv);return;}var rem=Math.max(0,Math.round((endTime-performance.now())/1000));var tel=$e('mathTimer');if(tel)tel.textContent=rem+'s';if(rem<=0){clearInterval(timerIv);N._mathDone(score,ans,wr,bs);}},200);};
+N._mathDone=function(sc,ans,wr,bs){var gd=sc>=40?'SSS':sc>=25?'SS':sc>=15?'S':sc>=8?'A':sc>=4?'B':'C',gc=sc>=20?'var(--success)':sc>=12?'var(--accent)':sc>=6?'var(--warning)':'var(--accent2)';if(sc>=40)N.flashScreen('gold');var imp=N.record('math',sc,true);$c().innerHTML='<div class="results"><div class="score">'+sc+'</div><div class="grade" style="color:'+gc+'">'+gd+'</div><div class="stats">'+sc+' correct &middot; '+(ans-sc)+' wrong &middot; Streak: '+bs+'<br>'+(imp?'<span style="color:var(--success)">NEW PERSONAL BEST!</span><br>':'')+'</div><button class="btn primary" onclick="N.countdown(function(){N._mathGame();})">Try Again</button><button class="btn" onclick="N.exit()">Back</button></div>';};
+
+// ====== TYPING ======
+N._tp={};
+N._typingIntro=function(){$c().innerHTML='<div class="instruction"><h2>Typing Speed</h2><p>Type the passage. Timer starts on your first key.<br>Live per-letter color feedback.</p><button class="btn primary" onclick="N._typingGame()">Start</button></div>';};
+N._typingGame=function(){
+  var texts=["The old man walked slowly down the narrow cobblestone street, his worn leather shoes clicking softly against the ancient stones. He paused at the corner and looked up at the sky.","Computers have changed the world in ways that nobody could have predicted fifty years ago. The internet connects billions of people across every continent on our planet.","She opened the thick wooden door and stepped into the dusty library. Rows of books stretched from floor to ceiling, their spines faded but still legible in the dim afternoon light.","The scientist adjusted the microscope and peered through the lens at the microscopic organisms swimming in the petri dish. They moved with surprising speed and purpose.","Deep beneath the ocean surface, where sunlight never reaches, strange creatures glow with their own bioluminescent light. They drift through the darkness like living stars.","The musician placed her fingers on the piano keys and began to play. The melody filled the concert hall, rising and falling like waves on a distant shore.","A gentle rain began to fall as they walked through the park. The droplets created tiny ripples on the surface of the pond where ducks paddled lazily.","The detective examined the clues carefully, piece by piece. A fingerprint here, a torn receipt there. Slowly, the puzzle began to reveal its hidden pattern.","Mountains rose in the distance, their snow-capped peaks piercing the clouds. The valley below was a patchwork of green fields and winding silver rivers.","The chef moved through the kitchen with practiced efficiency, chopping vegetables, stirring sauces, and tasting broths. Every movement was precise and deliberate."];
+  var target=texts[Math.floor(Math.random()*texts.length)];N._tp={target:target,started:false,st:0,errors:0};
+  $c().innerHTML='<div class="typing-text" id="typingRef">'+target.split('').map(function(c,i){return'<span id="tc'+i+'">'+c+'</span>';}).join('')+'</div><textarea class="typing-input" id="typingInput" placeholder="Start typing..." autofocus spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off"></textarea><div style="margin-top:10px;color:var(--dim);font-size:0.85rem;" id="typingStats">Start typing to begin &middot; '+target.length+' chars</div>';
+  var inp=$e('typingInput'),ref=$e('typingRef'),first=true,spans=ref.querySelectorAll('span');
+  ['copy','cut','contextmenu'].forEach(function(evt){ref.addEventListener(evt,function(e){e.preventDefault();});});
+  inp.addEventListener('paste',function(e){e.preventDefault();N.toast('Pasting is disabled');});
+  inp.addEventListener('beforeinput',function(e){if(e.inputType==='insertFromPaste'||e.inputType==='insertFromDrop'){e.preventDefault();N.toast('Pasting is disabled');}});
+  inp.addEventListener('input',function(){if(first&&inp.value.length>0){first=false;N._tp.st=performance.now();N._tp.started=true;}if(!N._tp.started)return;var typed=inp.value;N._tp.errors=0;for(var i=0;i<Math.max(typed.length,target.length);i++){if(i<typed.length&&i<target.length){if(typed[i]===target[i]){spans[i].className='correct';spans[i].style.background='';}else{spans[i].className='incorrect';spans[i].style.background='rgba(255,61,113,0.25)';N._tp.errors++;}}else if(i<target.length){spans[i].className='';spans[i].style.background='';}}if(typed.length<target.length)spans[typed.length].style.borderBottom='2px solid var(--accent)';var secs=(performance.now()-N._tp.st)/1000,wpm=secs>0?Math.round((Math.max(0,typed.length-N._tp.errors)/5)/(secs/60)):0;$e('typingStats').innerHTML='WPM: <b style="color:var(--accent)">'+wpm+'</b> &middot; Errors: '+N._tp.errors+' &middot; '+typed.length+'/'+target.length;if(typed.length>=target.length)N._typingDone();});inp.focus();
+};
+N._typingDone=function(){var tp=N._tp;if(!tp.started){N.exit();return;}var secs=(performance.now()-tp.st)/1000,tc=Math.min($e('typingInput').value.length,tp.target.length),cc=tc-tp.errors,wpm=secs>0?Math.round((Math.max(0,cc)/5)/(secs/60)):0,acc=tc>0?Math.round(cc/tc*100):0,valid=N.validateTypingScore(wpm,secs,cc);var gd=wpm>=80?'SSS':wpm>=60?'SS':wpm>=45?'S':wpm>=30?'A':wpm>=20?'B':'C',gc=wpm>=60?'var(--success)':wpm>=40?'var(--accent)':wpm>=25?'var(--warning)':'var(--accent2)';if(valid&&wpm>=80)N.flashScreen('gold');var imp=valid?N.record('typing',wpm,true):false;$c().innerHTML='<div class="results"><div class="score">'+wpm+'<span style="font-size:1.3rem"> WPM</span></div><div class="grade" style="color:'+gc+'">'+gd+'</div><div class="stats">'+acc+'% accuracy &middot; '+tp.errors+' errors &middot; '+Math.round(secs)+'s<br>'+(valid?(imp?'<span style="color:var(--success)">NEW PERSONAL BEST!</span><br>':''):'<span style="color:var(--warning)">Score not saved — type manually, no paste</span><br>')+'</div><button class="btn primary" onclick="N._typingGame()">Try Again</button><button class="btn" onclick="N.exit()">Back</button></div>';};
+
+// ====== VISUAL SEARCH ======
+N._vs={};
+N._visualIntro=function(){$c().innerHTML='<div class="instruction"><h2>Visual Search</h2><p>Find the ONE odd-colored tile.<br>Grids grow, differences shrink.</p><p style="color:var(--dim);font-size:0.7rem;">One wrong click = game over</p><button class="btn primary" onclick="N.countdown(function(){N._visualGame();})">Start</button></div>';};
+N._visualGame=function(){N._vs={round:1,score:0,total:0,st:performance.now()};N._visualRound();};
+N._visualRound=function(){var vs=N._vs;if(!N.active)return;var size=Math.min(3+Math.floor(vs.round/2),8),total=size*size,oddIdx=Math.floor(Math.random()*total),baseColor=[Math.floor(Math.random()*200)+30,Math.floor(Math.random()*200)+30,Math.floor(Math.random()*200)+30],shift=Math.max(1,Math.floor(7-vs.round*0.5)),oddShift=[baseColor[0]+(Math.random()>0.5?shift:-shift),baseColor[1]+(Math.random()>0.5?shift:-shift),baseColor[2]+(Math.random()>0.5?shift:-shift)];oddShift=oddShift.map(function(v){return Math.max(0,Math.min(255,v));});var baseRgb='rgb('+baseColor.join(',')+')',oddRgb='rgb('+oddShift.join(',')+')',cellSize=Math.floor((Math.min(innerWidth*0.85,460)-size*3)/size),h='<div class="visual-grid" style="grid-template-columns:repeat('+size+','+cellSize+'px);grid-template-rows:repeat('+size+','+cellSize+'px);">';for(var i=0;i<total;i++)h+='<div class="visual-cell" style="background:'+(i===oddIdx?oddRgb:baseRgb)+';" data-odd="'+(i===oddIdx)+'"></div>';h+='</div><div style="margin-top:12px;color:var(--dim);font-size:0.85rem;">Round '+vs.round+' &middot; '+size+'\u00D7'+size+' &middot; Score: '+vs.score+'</div><div class="progress-wrap"><div class="progress-fill" style="width:'+Math.min(100,(vs.round/20)*100)+'%"></div></div>';$c().innerHTML=h;var t0=performance.now();document.querySelectorAll('.visual-cell').forEach(function(cell){cell.onclick=function(){if(cell.dataset.odd==='true'){var t=Math.round(performance.now()-t0);vs.score+=Math.max(1,10-t/100);vs.round++;vs.total++;N.sfx.click();var lastDiv=$c().querySelector('div:last-child');if(lastDiv)lastDiv.textContent='Found in '+t+'ms!';setTimeout(function(){N._visualRound();},500);}else{N.sfx.fail();N.shake(5);cell.classList.add('wrong-search');document.querySelectorAll('.visual-cell').forEach(function(x){x.onclick=null;});document.querySelectorAll('.visual-cell').forEach(function(x){if(x.dataset.odd==='true')x.style.boxShadow='0 0 0 3px var(--success)';});setTimeout(function(){N._visualDone();},1000);}};});};
+N._visualDone=function(){var vs=N._vs,sc=vs.score,el=Math.round(performance.now()-vs.st),gd=sc>=80?'SSS':sc>=50?'SS':sc>=30?'S':sc>=15?'A':sc>=5?'B':'C',gc=sc>=50?'var(--success)':sc>=25?'var(--accent)':sc>=10?'var(--warning)':'var(--accent2)';if(sc>=80)N.flashScreen('gold');var imp=N.record('visual',sc,true);$c().innerHTML='<div class="results"><div class="score">'+sc+'<span style="font-size:1.3rem"> pts</span></div><div class="grade" style="color:'+gc+'">'+gd+'</div><div class="stats">'+vs.total+' rounds &middot; '+el+'ms<br>'+(imp?'<span style="color:var(--success)">NEW PERSONAL BEST!</span><br>':'')+'</div><button class="btn primary" onclick="N.countdown(function(){N._visualGame();})">Try Again</button><button class="btn" onclick="N.exit()">Back</button></div>';};
+
+// ====== TIME PERCEPTION ======
+N._tm={};
+N._timeIntro=function(){$c().innerHTML='<div class="instruction"><h2>Time Perception</h2><p>Press &amp; HOLD. Release when you think<br>exactly X seconds have passed.</p><p style="color:var(--dim);font-size:0.7rem;">5 trials &middot; 3 to 8 seconds</p><button class="btn primary" onclick="N.countdown(function(){N._timeGame();})">Start</button></div>';};
+N._timeGame=function(){N._tm={trials:[],idx:0,total:5,targets:[3,5,7,4,8],st:0};N._timeTrial();};
+N._timeTrial=function(){var tm=N._tm;if(!N.active||tm.idx>=tm.total){N._timeDone();return;}var target=tm.targets[tm.idx];$c().innerHTML='<div style="font-family:Orbitron;font-size:2.5rem;font-weight:900;color:var(--accent);margin-bottom:8px;">'+target+'.0<span style="font-size:1rem">s</span></div><div class="time-perception-area" id="tpArea"><div style="font-family:Orbitron;font-size:1.1rem;color:var(--dim);pointer-events:none;">PRESS &amp; HOLD</div></div><div style="margin-top:12px;color:var(--dim);font-size:0.85rem;">Trial '+(tm.idx+1)+'/'+tm.total+' &middot; Target: '+target+'s</div><div class="progress-wrap"><div class="progress-fill" style="width:'+((tm.idx/tm.total)*100)+'%"></div></div>';var area=$e('tpArea'),elapsed=0,iv=null;area.onmousedown=function(e){e.preventDefault();if(iv)return;area.classList.add('counting');area.querySelector('div').textContent='HOLDING...';tm.st=performance.now();iv=setInterval(function(){elapsed=(performance.now()-tm.st)/1000;},50);};area.onmouseup=function(e){e.preventDefault();if(!iv)return;clearInterval(iv);iv=null;var actual=(performance.now()-tm.st)/1000,error=Math.abs(actual-target),acc=Math.max(0,Math.round((1-Math.min(error/target,1))*100));tm.trials.push({target:target,actual:Math.round(actual*100)/100,acc:acc});tm.idx++;area.classList.remove('counting');area.classList.add('stopped');area.querySelector('div').textContent=actual.toFixed(1)+'s ('+(actual>target?'+'+(actual-target).toFixed(1)+'s late':(target-actual).toFixed(1)+'s early')+')';if(acc>=80)N.sfx.ok();else if(acc>=50)N.sfx.click();else{N.sfx.fail();N.shake(2);}area.onmousedown=area.onmouseup=null;setTimeout(function(){N._timeTrial();},1500);};area.addEventListener('touchstart',function(e){e.preventDefault();area.onmousedown(e);});area.addEventListener('touchend',function(e){e.preventDefault();area.onmouseup(e);});};
+N._timeDone=function(){var tr=N._tm.trials;if(tr.length===0){N.exit();return;}var avgAcc=Math.round(tr.reduce(function(a,b){return a+b.acc;},0)/tr.length),gd=avgAcc>=90?'SSS':avgAcc>=80?'SS':avgAcc>=65?'S':avgAcc>=50?'A':avgAcc>=30?'B':'C',gc=avgAcc>=80?'var(--success)':avgAcc>=60?'var(--accent)':avgAcc>=40?'var(--warning)':'var(--accent2)';if(avgAcc>=90)N.flashScreen('gold');var imp=N.record('time',avgAcc,true);$c().innerHTML='<div class="results"><div class="score">'+avgAcc+'<span style="font-size:1.3rem">%</span></div><div class="grade" style="color:'+gc+'">'+gd+'</div><div class="stats">Avg: '+avgAcc+'% &middot; '+tr.map(function(t){return t.actual.toFixed(1)+'s (vs '+t.target+')';}).join(', ')+'<br>'+(imp?'<span style="color:var(--success)">NEW PERSONAL BEST!</span><br>':'')+'</div><button class="btn primary" onclick="N.countdown(function(){N._timeGame();})">Try Again</button><button class="btn" onclick="N.exit()">Back</button></div>';};
+
+// ====== N-BACK ======
+N._nb={};
+N._nbackIntro=function(){$c().innerHTML='<div class="instruction"><h2>N-Back</h2><p>Position lights up. Click if it matches the one<br>from N steps back. Gold standard of brain training.</p><p style="color:var(--dim);font-size:0.7rem;">Starts at 1-back &middot; 20 per round &middot; Click during flash</p><button class="btn primary" onclick="N.countdown(function(){N._nbackGame();})">Start</button></div>';};
+N._nbackGame=function(){N._nb={n:1,round:0,seq:[],idx:0,total:20,misses:0,fa:0,phase:'watching',matched:false,ch:0};N._nbackNext();};
+N._nbackNext=function(){var nb=N._nb;if(!N.active)return;nb.round++;if(nb.round>1)nb.n=Math.min(10,Math.floor((nb.round+1)/2));nb.seq=[];nb.idx=0;nb.misses=0;nb.fa=0;nb.ch=0;var total=nb.total,mc=5;for(var i=0;i<total;i++)nb.seq.push(Math.floor(Math.random()*9));var mps=[];while(mps.length<mc){var p=nb.n+Math.floor(Math.random()*(total-nb.n));if(mps.indexOf(p)===-1&&nb.n>=1)mps.push(p);}mps.sort(function(a,b){return a-b;});for(var i=0;i<mc;i++)nb.seq[mps[i]]=nb.seq[mps[i]-nb.n];nb.phase='watching';N._nbackShow();};
+N._nbackShow=function(){var nb=N._nb;if(!N.active||nb.idx>=nb.seq.length){N._nbackDone();return;}var pos=nb.seq[nb.idx];nb.matched=nb.idx>=nb.n&&nb.seq[nb.idx]===nb.seq[nb.idx-nb.n];var toneFreq=400+pos*80;N.sfx.tick&&(function(){var c=new(window.AudioContext||window.webkitAudioContext)();if(!c)return;var N_vol=0.5,o=c.createOscillator(),g=c.createGain();o.type='sine';o.frequency.setValueAtTime(toneFreq,c.currentTime);g.gain.setValueAtTime(0.04*N_vol,c.currentTime);g.gain.exponentialRampToValueAtTime(0.001,c.currentTime+0.15);o.connect(g);g.connect(c.destination);o.start();o.stop(c.currentTime+0.15);})();$c().innerHTML='<div style="font-family:Orbitron;font-size:0.9rem;color:var(--accent);margin-bottom:8px;">'+nb.n+'-Back &middot; Round '+nb.round+' &middot; '+(nb.ch)+' hits</div><div class="nback-grid" id="nbGrid">'+Array(9).fill(0).map(function(_,i){return'<div class="nback-cell'+(i===pos?' lit':'')+'" data-idx="'+i+'"></div>';}).join('')+'</div><div style="margin-top:10px;color:var(--dim);font-size:0.8rem;">'+(nb.matched?'Click if it matches '+nb.n+' steps back!':'\u00B7 '+(nb.idx+1)+'/'+nb.total)+'</div><div class="progress-wrap"><div class="progress-fill" style="width:'+((nb.idx/nb.total)*100)+'%"></div></div>';nb.phase='watching';document.querySelectorAll('.nback-cell').forEach(function(cell){cell.onclick=function(){if(nb.phase!=='watching')return;if(nb.matched){nb.ch++;cell.classList.add('match-click');N.sfx.ok();nb.phase='responded';}else{nb.fa++;cell.classList.add('false-alarm');N.sfx.fail();N.shake(2);}};});setTimeout(function(){if(!N.active)return;if(nb.matched&&nb.phase==='watching')nb.misses++;nb.idx++;N._nbackShow();},1800);};
+N._nbackDone=function(){var nb=N._nb,sc=Math.max(0,nb.round-1),gd=sc>=5?'SSS':sc>=3?'SS':sc>=2?'S':sc>=1?'A':'B',gc=sc>=3?'var(--success)':sc>=2?'var(--accent)':sc>=1?'var(--warning)':'var(--accent2)';if(sc>=4)N.flashScreen('gold');var imp=N.record('nback',sc,true);$c().innerHTML='<div class="results"><div class="score">'+sc+'<span style="font-size:1.3rem">-Back</span></div><div class="grade" style="color:'+gc+'">'+gd+'</div><div class="stats">Reached '+nb.n+'-back &middot; '+nb.ch+' hits, '+nb.misses+' misses, '+nb.fa+' false alarms<br>'+(imp?'<span style="color:var(--success)">NEW PERSONAL BEST!</span><br>':'')+'</div><button class="btn primary" onclick="N.countdown(function(){N._nbackGame();})">Try Again</button><button class="btn" onclick="N.exit()">Back</button></div>';};
+
+// ====== GO / NO-GO ======
+N._gn={};
+N._gngIntro=function(){$c().innerHTML='<div class="instruction"><h2>Go / No-Go</h2><p>Press SPACE or click when you see a CIRCLE.<br>Do NOT press for squares. Tests impulse control.</p><p style="color:var(--dim);font-size:0.7rem;">40 trials &middot; Random delay &middot; Stay focused</p><button class="btn primary" onclick="N.countdown(function(){N._gngGame();})">Start</button></div>';};
+N._gngGame=function(){
+  N._gn={trials:[],idx:0,total:40,hits:0,miss:0,fa:0,correctRejects:0,st:0,phase:'wait',isGo:false,responded:false};
+  N._gngTrial();
+};
+N._gngTrial=function(){
+  var gn=N._gn;if(!N.active||gn.idx>=gn.total){N._gngDone();return;}
+  gn.isGo=Math.random()<0.55;gn.responded=false;gn.phase='wait';
+  var shape=gn.isGo?'\u25CF':'\u25A0',borderCls=gn.isGo?'go':'';
+  $c().innerHTML='<div class="gng-area" id="gngArea"><div class="gng-shape" id="gngShape">'+shape+'</div></div><div style="margin-top:10px;color:var(--dim);font-size:0.8rem;">'+(gn.isGo?'GO (circle)':'NO-GO (square)')+' &middot; '+(gn.idx+1)+'/'+gn.total+'</div><div class="progress-wrap"><div class="progress-fill" style="width:'+((gn.idx/gn.total)*100)+'%"></div></div><div class="gng-feedback" id="gngFeed"></div>';
+  var area=$e('gngArea'),feed=$e('gngFeed'),t0=0;
+  if(gn.isGo)area.classList.add('go');else area.classList.add('nogo');
+  var delay=500+Math.random()*1500;
+  setTimeout(function(){
+    if(!N.active||gn.responded)return;
+    gn.phase='respond';t0=performance.now();
+    area.style.borderColor=gn.isGo?'var(--success)':'var(--accent2)';
+    // If no response within 1s for Go = miss, for No-Go = correct reject
+    setTimeout(function(){
+      if(!N.active||gn.responded)return;
+      gn.responded=true;gn.idx++;
+      if(gn.isGo){gn.miss++;feed.textContent='MISS';feed.style.color='var(--accent2)';N.sfx.fail();}
+      else{gn.correctRejects++;feed.textContent='\u2713';feed.style.color='var(--success)';}
+      setTimeout(function(){N._gngTrial();},600);
+    },1000);
+  },delay);
+  function respond(){
+    if(!N.active||gn.responded)return;gn.responded=true;gn.idx++;
+    var rt=t0?Math.round(performance.now()-t0):0;
+    if(gn.isGo){gn.hits++;feed.textContent='\u2713 '+rt+'ms';feed.style.color='var(--success)';N.sfx.click();}
+    else{gn.fa++;feed.textContent='FALSE ALARM';feed.style.color='var(--accent2)';N.sfx.fail();N.shake(3);}
+    setTimeout(function(){N._gngTrial();},600);
+  }
+  area.onclick=respond;
+  document.onkeydown=function(e){if(e.code==='Space'){e.preventDefault();respond();}};
+};
+N._gngDone=function(){
+  var gn=N._gn,acc=gn.hits+gn.fa+gn.miss>0?Math.round((gn.hits+gn.correctRejects)/gn.total*100):0;
+  var gd=acc>=90?'SSS':acc>=80?'SS':acc>=70?'S':acc>=55?'A':acc>=40?'B':'C',gc=acc>=80?'var(--success)':acc>=65?'var(--accent)':acc>=50?'var(--warning)':'var(--accent2)';
+  if(acc>=90)N.flashScreen('gold');var imp=N.record('gng',acc,true);
+  $c().innerHTML='<div class="results"><div class="score">'+acc+'<span style="font-size:1.3rem">%</span></div><div class="grade" style="color:'+gc+'">'+gd+'</div><div class="stats">Hits: '+gn.hits+' &middot; Misses: '+gn.miss+' &middot; False alarms: '+gn.fa+'<br>Correct rejects: '+gn.correctRejects+'/'+(gn.total-gn.hits-gn.miss-gn.fa+gn.correctRejects)+'<br>'+(imp?'<span style="color:var(--success)">NEW PERSONAL BEST!</span><br>':'')+'</div>'+N.resultBar(acc,100)+'<button class="btn primary" onclick="N.countdown(function(){N._gngGame();})">Try Again</button><button class="btn" onclick="N.exit()">Back</button></div>';
+  document.onkeydown=null;
+};
+
+// ====== PATTERN RECOGNITION ======
+N._pr={};
+N._patternIntro=function(){$c().innerHTML='<div class="instruction"><h2>Pattern Recognition</h2><p>A pattern forms across a 3x3 grid.<br>Pick the option that completes it.</p><p style="color:var(--dim);font-size:0.7rem;">10 patterns &middot; Increasing difficulty</p><button class="btn primary" onclick="N.countdown(function(){N._patternGame();})">Start</button></div>';};
+N._patternGame=function(){
+  N._pr={round:0,total:10,score:0,correct:0,st:performance.now()};
+  N._patternRound();
+};
+N._patternRound=function(){
+  var pr=N._pr;if(!N.active||pr.round>=pr.total){N._patternDone();return;}
+  pr.round++;
+  var colors=['#ff3d71','#00b0ff','#ffd740','#00e676','#b347ea','#ff6d00'];
+  // Generate a simple pattern: row-gradient, column-fill, diagonal
+  var patterns=[
+    {name:'row',fn:function(r,c){return colors[r%colors.length];}},
+    {name:'col',fn:function(r,c){return colors[c%colors.length];}},
+    {name:'diag',fn:function(r,c){return colors[(r+c)%colors.length];}},
+    {name:'checker',fn:function(r,c){return(r+c)%2===0?colors[0]:colors[1];}},
+    {name:'border',fn:function(r,c){return(r===0||r===2||c===0||c===2)?colors[0]:colors[1];}},
+    {name:'cross',fn:function(r,c){return(r===1||c===1)?colors[0]:colors[3];}},
+  ];
+  var pat=patterns[Math.floor(Math.random()*patterns.length)];
+  // Generate the 3x3 grid but leave one cell blank (randomly)
+  var blankR=Math.floor(Math.random()*3),blankC=Math.floor(Math.random()*3);
+  var correctColor=pat.fn(blankR,blankC);
+  // Generate wrong options
+  var options=[correctColor];
+  while(options.length<4){var oc=colors[Math.floor(Math.random()*colors.length)];if(options.indexOf(oc)===-1)options.push(oc);}
+  // Shuffle options
+  for(var i=options.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1)),tmp=options[i];options[i]=options[j];options[j]=tmp;}
+  var gridHtml='<div class="pattern-grid">';
+  for(var r=0;r<3;r++)for(var c=0;c<3;c++){
+    if(r===blankR&&c===blankC)gridHtml+='<div class="pattern-cell" style="background:var(--surface2);border:2px dashed var(--dim);"></div>';
+    else gridHtml+='<div class="pattern-cell" style="background:'+pat.fn(r,c)+';"></div>';
+  }
+  gridHtml+='</div>';
+  var optHtml='<div class="pattern-options">';
+  options.forEach(function(oc,i){optHtml+='<div class="pattern-opt" style="background:'+oc+';" data-color="'+oc+'" data-idx="'+i+'"></div>';});
+  optHtml+='</div>';
+  $c().innerHTML='<div style="text-align:center;">'+gridHtml+'<div style="color:var(--dim);font-size:0.85rem;margin:8px 0;">What color completes the pattern?</div>'+optHtml+'<div style="margin-top:10px;color:var(--dim);font-size:0.75rem;">Round '+pr.round+'/'+pr.total+' &middot; Score: '+pr.score+'</div><div class="progress-wrap"><div class="progress-fill" style="width:'+((pr.round/pr.total)*100)+'%"></div></div></div>';
+  var t0=performance.now();
+  document.querySelectorAll('.pattern-opt').forEach(function(opt){
+    opt.onclick=function(){
+      var chosen=opt.dataset.color,correct=chosen===correctColor;
+      var rt=Math.round(performance.now()-t0);
+      if(correct){pr.correct++;pr.score+=Math.max(1,10-Math.floor(rt/500));opt.classList.add('correct-pick');N.sfx.ok();}
+      else{opt.classList.add('wrong-pick');document.querySelectorAll('.pattern-opt').forEach(function(o){if(o.dataset.color===correctColor)o.classList.add('correct-pick');});N.sfx.fail();N.shake(3);}
+      document.querySelectorAll('.pattern-opt').forEach(function(o){o.onclick=null;});
+      setTimeout(function(){N._patternRound();},800);
+    };
+  });
+};
+N._patternDone=function(){
+  var pr=N._pr,sc=pr.score,gd=sc>=70?'SSS':sc>=45?'SS':sc>=30?'S':sc>=15?'A':sc>=5?'B':'C',gc=sc>=45?'var(--success)':sc>=25?'var(--accent)':sc>=10?'var(--warning)':'var(--accent2)';
+  if(sc>=70)N.flashScreen('gold');var imp=N.record('pattern',sc,true);
+  $c().innerHTML='<div class="results"><div class="score">'+sc+'<span style="font-size:1.3rem"> pts</span></div><div class="grade" style="color:'+gc+'">'+gd+'</div><div class="stats">'+pr.correct+'/'+pr.total+' correct &middot; '+Math.round(performance.now()-pr.st)+'ms total<br>'+(imp?'<span style="color:var(--success)">NEW PERSONAL BEST!</span><br>':'')+'</div>'+N.resultBar(sc,80)+'<button class="btn primary" onclick="N.countdown(function(){N._patternGame();})">Try Again</button><button class="btn" onclick="N.exit()">Back</button></div>';
+};
+
+// ====== RESULT BAR ======
+N.resultBar=function(val,max,color){
+  var pct=Math.min(100,Math.round((val/max)*100));
+  var cl=color||(pct>=90?'var(--success)':pct>=60?'var(--accent)':pct>=30?'var(--warning)':'var(--accent2)');
+  return '<div class="result-bar-wrap"><div class="result-bar-fill" style="width:'+pct+'%;background:'+cl+';"></div><div class="result-bar-marker" style="left:'+pct+'%;"></div></div>';
+};
+
+// ====== SCORE COUNTER ======
+N.animateScore=function(el,target,dur){
+  dur=dur||600;var start=0,iv=setInterval(function(){
+    start+=Math.ceil(target/(dur/16));if(start>=target){start=target;clearInterval(iv);}
+    el.textContent=start;
+  },16);
+};
+
+// ====== SKILL RADAR ======
+N.radarChart=function(){
+  var s=N.getLS(),b=s.bests||{},h=s.history||{};
+  var skills=[
+    {k:'reaction',label:'Speed',max:500,inv:true},{k:'sequence',label:'Sequence',max:15},{k:'aim',label:'Precision',max:30000,inv:true},
+    {k:'number',label:'Digits',max:15},{k:'chimp',label:'Chimp',max:10},{k:'verbal',label:'Verbal',max:50},
+    {k:'stroop',label:'Focus',max:100},{k:'math',label:'Math',max:40},{k:'typing',label:'Typing',max:100},
+    {k:'nback',label:'N-Back',max:6},{k:'gng',label:'Control',max:100},{k:'pattern',label:'Pattern',max:80}
+  ];
+  var n=skills.length,vals=[],any=false;
+  skills.forEach(function(sk){var v=b[sk.k];if(v!==undefined){any=true;var p=Math.min(100,sk.inv?Math.round((1-v/sk.max)*100):Math.round(v/sk.max*100));vals.push(p);}else vals.push(0);});
+  if(!any)return'';
+  var cx=150,cy=150,r=120,html='<svg width="300" height="300" style="display:block;margin:10px auto;"><circle cx="150" cy="150" r="'+r+'" fill="none" stroke="var(--border)" stroke-width="1"/><circle cx="150" cy="150" r="'+(r*0.66)+'" fill="none" stroke="var(--border)" stroke-width="0.5" stroke-dasharray="4"/><circle cx="150" cy="150" r="'+(r*0.33)+'" fill="none" stroke="var(--border)" stroke-width="0.5" stroke-dasharray="4"/>';
+  var pts='';
+  for(var i=0;i<n;i++){var ang=(-Math.PI/2)+(2*Math.PI/n)*i;var vp=Math.max(5,vals[i])/100*r;var px=cx+Math.cos(ang)*vp,py=cy+Math.sin(ang)*vp;pts+=(i===0?'M':'L')+px.toFixed(1)+','+py.toFixed(1)+' ';}
+  html+='<path d="'+pts+'Z" fill="rgba(0,229,255,0.15)" stroke="var(--accent)" stroke-width="2"/>';
+  for(var i=0;i<n;i++){var ang=(-Math.PI/2)+(2*Math.PI/n)*i;var lx=cx+Math.cos(ang)*(r+18),ly=cy+Math.sin(ang)*(r+18);html+='<text x="'+lx.toFixed(1)+'" y="'+ly.toFixed(1)+'" text-anchor="middle" dominant-baseline="middle" fill="var(--dim)" font-size="9" font-family="Inter">'+skills[i].label+'</text>';}
+  html+='</svg>';
+  return html;
+};
+N.shareResult=function(){
+  var res=document.querySelector('.results');
+  if(!res)return;
+  var score=res.querySelector('.score');var grade=res.querySelector('.grade');var stats=res.querySelector('.stats');
+  var sn=score?score.textContent.trim():'?';var gn=grade?grade.textContent.trim():'?';var st=stats?stats.textContent.trim():'?';
+  var name=N.current||'Test';name=name.charAt(0).toUpperCase()+name.slice(1);
+  var text='NeuroForge — '+name+'\n'+sn+' | '+gn+'\n'+st+'\nplay: '+location.href;
+  if(navigator.clipboard){navigator.clipboard.writeText(text).then(function(){N.toast('Result copied!');}).catch(function(){N.toast('Copy failed');});}
+  else{N.toast('Clipboard not available');}
+};
+
+// Auto-add share button to all result screens
+new MutationObserver(function(muts){
+  muts.forEach(function(m){m.addedNodes.forEach(function(n){if(n.querySelector){var r=n.querySelector('.results');if(r&&!r.querySelector('.share-btn')){var b=document.createElement('button');b.className='btn small share-btn';b.style.cssText='margin-top:4px;';b.textContent='Share Result';b.onclick=N.shareResult;r.appendChild(b);}}});});
+}).observe(document.getElementById('testContent'),{childList:true,subtree:true});
+
+// ====== BETTER CONFETTI ======
+N.bigConfetti=function(){N.confetti(120);};
+
+// ====== EXPORT ======
+N.exportData=function(){
+  var s=N.getLS(),json=JSON.stringify(s,null,2);
+  var blob=new Blob([json],{type:'application/json'});
+  var a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='neuroforge-data-'+new Date().toISOString().slice(0,10)+'.json';
+  a.click();N.toast('Data exported!');
+};
+N.importData=function(){
+  var inp=document.createElement('input');inp.type='file';inp.accept='.json';
+  inp.onchange=function(){
+    var f=inp.files[0];if(!f)return;
+    var r=new FileReader();
+    r.onload=function(e){
+      try{var d=JSON.parse(e.target.result);if(d.bests||d.history){localStorage.setItem('nf',JSON.stringify(d));N.updateUI();N.renderStats();N.toast('Data imported! '+Object.keys(d.bests||{}).length+' test types restored.');}else{N.toast('Invalid data file.');}}catch(x){N.toast('Invalid JSON file.');}
+    };
+    r.readAsText(f);
+  };
+  inp.click();
+};
+
+// ====== ACHIEVEMENT SHOWCASE ======
+N.showAchievements=function(){
+  var s=N.getLS(),ach=s.achievements||{},all=[
+    {k:'first',msg:'First test completed!'},
+    {k:'ten',msg:'10 tests done! Keep going!'},
+    {k:'fifty',msg:'50 tests! You\'re dedicated!'},
+    {k:'speed',msg:'Lightning reflexes! <250ms'},
+    {k:'memory',msg:'Memory master! 8+ sequences'},
+    {k:'aim',msg:'Sharpshooter! Aim <15s'},
+    {k:'numbers',msg:'Number genius! 9+ digits'},
+    {k:'chimp',msg:'Smarter than a chimp!'},
+    {k:'words',msg:'Word wizard! 30+ pts'},
+    {k:'stroopAch',msg:'Unshakeable focus! 90%+'},
+    {k:'mathAch',msg:'Human calculator! 30+'},
+    {k:'typingAch',msg:'Speed typist! 70+ WPM'},
+    {k:'visualAch',msg:'Eagle eye! 60+ visual'},
+    {k:'timeAch',msg:'Clock master! 80%+ accuracy'},
+    {k:'nbackAch',msg:'Working memory beast! 4-back'},
+    {k:'gngAch',msg:'Impulse control master! 90%+'},
+    {k:'patternAch',msg:'Pattern genius! 60+ pts'},
+    {k:'trackingAch',msg:'Eagle tracker! 40+ pts'},
+    {k:'flankerAch',msg:'Laser focus! 90%+ flanker'},
+    {k:'scrambleAch',msg:'Word master! 12+ unscrambled'},
+    {k:'rotationAch',msg:'Spatial genius! 50+ pts'},
+    {k:'audioAch',msg:'Audio memory beast! 10+ sequence'},
+    {k:'allTests',msg:'Every test completed!'}
+  ];
+  var earned=0,html='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;">';
+  all.forEach(function(a){
+    var has=!!ach[a.k];if(has)earned++;
+    html+='<div style="padding:10px 14px;border-radius:10px;background:'+(has?'var(--surface2)':'rgba(255,255,255,0.02)')+';border:1px solid '+(has?'var(--gold)':'var(--border)')+';opacity:'+(has?'1':'0.4')+';font-size:0.75rem;">'+(has?'\u2713 ':'\u25CB ')+a.msg+'</div>';
+  });
+  html+='</div><div style="text-align:center;margin-top:12px;color:var(--gold);font-size:0.8rem;">'+earned+'/'+all.length+' achievements</div>';
+  $e('achContent').innerHTML=html;
+  var p=$e('achPanel');p.classList.toggle('visible');
+};
+
+// ====== KEYBOARD SHORTCUTS ======
+document.addEventListener('keydown',function(e){
+  if(e.key==='?'&&!N.current){e.preventDefault();var el=$e('shortcutOverlay');if(el)el.classList.toggle('visible');}
+  if(e.key==='Escape'){var el=$e('shortcutOverlay');if(el&&el.classList.contains('visible')){el.classList.remove('visible');return;}}
+});
+
+// ====== BALL TRACKING ======
+N._bt={};
+N._trackingIntro=function(){$c().innerHTML='<div class="instruction"><h2>Ball Tracking</h2><p>Watch the highlighted ball. Then track it as<br>all balls move around. Click the right one!</p><p style="color:var(--dim);font-size:0.7rem;">5 rounds &middot; Starts easy, adds more balls</p><button class="btn primary" onclick="N.countdown(function(){N._trackingGame();})">Start</button></div>';};
+N._trackingGame=function(){
+  N._bt={round:0,total:5,score:0,st:performance.now()};
+  N._trackRound();
+};
+N._trackRound=function(){
+  var bt=N._bt;if(!N.active||bt.round>=bt.total){N._trackingDone();return;}
+  bt.round++;
+  var ballCount=Math.min(4+bt.round,10);
+  var colors=['#ff3d71','#00b0ff','#ffd740','#00e676','#b347ea','#ff6d00','#ff0080','#00ffc8','#ff8800','#4488ff'];
+  var targetIdx=Math.floor(Math.random()*ballCount);
+  $c().innerHTML='<div class="track-area" id="trackArea"></div><div style="margin-top:8px;color:var(--dim);font-size:0.8rem;">Round '+bt.round+'/'+bt.total+' &middot; '+ballCount+' balls &middot; Score: '+bt.score+'</div><div class="progress-wrap"><div class="progress-fill" style="width:'+((bt.round/bt.total)*100)+'%"></div></div>';
+  var area=$e('trackArea'),balls=[],pad=24,w=area.clientWidth-pad*2,h=area.clientHeight-pad*2;
+  for(var i=0;i<ballCount;i++){
+    var b=document.createElement('div');b.className='track-ball';
+    b.style.background=colors[i];b.style.width='22px';b.style.height='22px';
+    b.style.left=pad+Math.random()*w+'px';b.style.top=pad+Math.random()*h+'px';
+    if(i===targetIdx){b.classList.add('target');b.style.zIndex='2';}
+    area.appendChild(b);balls.push({el:b,vx:(Math.random()-0.5)*5,vy:(Math.random()-0.5)*5,x:parseFloat(b.style.left),y:parseFloat(b.style.top),isTarget:i===targetIdx});
+  }
+  // Highlight target briefly
+  var targetBall=balls[targetIdx].el;targetBall.classList.add('highlighted');
+  setTimeout(function(){targetBall.classList.remove('highlighted');targetBall.classList.remove('target');
+    var moveIv=setInterval(function(){
+      if(!N.active){clearInterval(moveIv);return;}
+      balls.forEach(function(b){
+        b.x+=b.vx;b.y+=b.vy;
+        if(b.x<pad||b.x>pad+w)b.vx*=-1;if(b.y<pad||b.y>pad+h)b.vy*=-1;
+        b.x=Math.max(pad,Math.min(pad+w,b.x));b.y=Math.max(pad,Math.min(pad+h,b.y));
+        b.el.style.left=b.x+'px';b.el.style.top=b.y+'px';
+        if(Math.random()<0.04){b.vx=(Math.random()-0.5)*6;b.vy=(Math.random()-0.5)*6;}
+      });
+    },25);
+    setTimeout(function(){clearInterval(moveIv);
+      balls.forEach(function(b){b.el.style.border='2px solid var(--border)';b.el.style.boxShadow='none';b.el.style.width='28px';b.el.style.height='28px';});
+      var clicked=false;
+      balls.forEach(function(b){
+        b.el.style.cursor='pointer';
+        b.el.onclick=function(e){e.stopPropagation();if(clicked)return;clicked=true;
+          if(b.isTarget){bt.score+=ballCount*3;b.el.style.boxShadow='0 0 20px var(--success)';b.el.style.border='2px solid var(--success)';N.sfx.ok();}
+          else{b.el.style.boxShadow='0 0 20px var(--accent2)';b.el.style.border='2px solid var(--accent2)';N.sfx.fail();N.shake(3);
+            balls.forEach(function(x){if(x.isTarget){x.el.style.boxShadow='0 0 25px var(--gold)';x.el.style.border='3px solid var(--gold)';x.el.style.width='32px';x.el.style.height='32px';}});
+          }
+          balls.forEach(function(x){x.el.onclick=null;});
+          setTimeout(function(){N._trackRound();},1200);
+        };
+      });
+    },5000);
+  },2000);
+};
+N._trackingDone=function(){
+  var sc=N._bt.score,gd=sc>=50?'SSS':sc>=30?'SS':sc>=18?'S':sc>=10?'A':sc>=4?'B':'C',gc=sc>=30?'var(--success)':sc>=18?'var(--accent)':sc>=10?'var(--warning)':'var(--accent2)';
+  if(sc>=50)N.flashScreen('gold');var imp=N.record('tracking',sc,true);
+  $c().innerHTML='<div class="results"><div class="score">'+sc+'<span style="font-size:1.3rem"> pts</span></div><div class="grade" style="color:'+gc+'">'+gd+'</div><div class="stats">'+N._bt.total+' rounds &middot; '+Math.round(performance.now()-N._bt.st)+'ms<br>'+(imp?'<span style="color:var(--success)">NEW PERSONAL BEST!</span><br>':'')+'</div>'+N.resultBar(sc,60)+'<button class="btn primary" onclick="N.countdown(function(){N._trackingGame();})">Try Again</button><button class="btn" onclick="N.exit()">Back</button></div>';
+};
+
+// ====== FLANKER TASK ======
+N._fl={};
+N._flankerIntro=function(){$c().innerHTML='<div class="instruction"><h2>Flanker Task</h2><p>Which way does the CENTER arrow point?<br>Ignore the flanking arrows. Go fast!</p><p style="color:var(--dim);font-size:0.7rem;">20 trials &middot; Keyboard: &#8592; / &#8594; arrows</p><button class="btn primary" onclick="N.countdown(function(){N._flankerGame();})">Start</button></div>';};
+N._flankerGame=function(){
+  N._fl={trials:[],idx:0,total:30,st:performance.now()};
+  N._flankerTrial();
+};
+N._flankerTrial=function(){
+  var fl=N._fl;if(!N.active||fl.idx>=fl.total){N._flankerDone();return;}
+  var centerDir=Math.random()<0.5?'left':'right';
+  var congruent=Math.random()<0.3; // 70% incongruent — harder
+  var flankDir=congruent?centerDir:(centerDir==='left'?'right':'left');
+  var arrows=[flankDir,flankDir,flankDir,centerDir,flankDir,flankDir,flankDir]; // 7 arrows
+  var sym='\u2190',symR='\u2192';
+  var html='<div class="flanker-arrows">';
+  arrows.forEach(function(d,i){html+='<span class="flanker-arrow'+(i===3?' center':' flanker')+'">'+(d==='left'?sym:symR)+'</span>';});
+  html+='</div><div class="flanker-btns"><button class="flanker-btn" id="flLeft">'+sym+'</button><button class="flanker-btn" id="flRight">'+symR+'</button></div><div style="margin-top:10px;color:var(--dim);font-size:0.75rem;">'+(fl.idx+1)+'/'+fl.total+'</div><div class="progress-wrap"><div class="progress-fill" style="width:'+((fl.idx/fl.total)*100)+'%"></div></div>';
+  $c().innerHTML=html;
+  var t0=performance.now(),answered=false;
+  function answer(dir){
+    if(answered)return;answered=true;
+    var correct=dir===centerDir,rt=Math.round(performance.now()-t0);
+    fl.trials.push({correct:correct,rt:rt,congruent:congruent});fl.idx++;
+    var lb=$e('flLeft'),rb=$e('flRight');
+    if(dir==='left'){if(correct)lb.classList.add('correct-press');else lb.classList.add('wrong-press');}
+    else{if(correct)rb.classList.add('correct-press');else rb.classList.add('wrong-press');}
+    if(correct)N.sfx.click();else{N.sfx.fail();N.shake(2);}
+    setTimeout(function(){N._flankerTrial();},400);
+  }
+  $e('flLeft').onclick=function(){answer('left');};
+  $e('flRight').onclick=function(){answer('right');};
+  document.onkeydown=function(e){if(e.key==='ArrowLeft'){e.preventDefault();answer('left');}if(e.key==='ArrowRight'){e.preventDefault();answer('right');}};
+  // Timeout — too slow = wrong
+  setTimeout(function(){if(!answered){fl.trials.push({correct:false,rt:2000,congruent:congruent});fl.idx++;if(!N.active)return;N.sfx.fail();var lb=$e('flLeft'),rb=$e('flRight');if(centerDir==='left')rb.classList.add('wrong-press');else lb.classList.add('wrong-press');setTimeout(function(){N._flankerTrial();},400);}},1500);
+};
+N._flankerDone=function(){
+  var fl=N._fl,tr=fl.trials;if(tr.length===0){N.exit();return;}
+  var cor=tr.filter(function(t){return t.correct;}).length,acc=Math.round(cor/tr.length*100);
+  var avgMs=Math.round(tr.reduce(function(a,b){return a+b.rt;},0)/tr.length);
+  var congr=tr.filter(function(t){return t.congruent;}),incongr=tr.filter(function(t){return !t.congruent;});
+  var congrAcc=congr.length>0?Math.round(congr.filter(function(t){return t.correct;}).length/congr.length*100):0;
+  var inconAcc=incongr.length>0?Math.round(incongr.filter(function(t){return t.correct;}).length/incongr.length*100):0;
+  var gd=acc>=95?'SSS':acc>=85?'SS':acc>=75?'S':acc>=60?'A':acc>=45?'B':'C',gc=acc>=85?'var(--success)':acc>=70?'var(--accent)':acc>=55?'var(--warning)':'var(--accent2)';
+  if(acc>=95)N.flashScreen('gold');var imp=N.record('flanker',acc,true);
+  $c().innerHTML='<div class="results"><div class="score">'+acc+'<span style="font-size:1.3rem">%</span></div><div class="grade" style="color:'+gc+'">'+gd+'</div><div class="stats">'+cor+'/'+tr.length+' correct &middot; '+avgMs+'ms avg<br>Congruent: '+congrAcc+'% &middot; Incongruent: '+inconAcc+'%<br>'+(imp?'<span style="color:var(--success)">NEW PERSONAL BEST!</span><br>':'')+'</div>'+N.resultBar(acc,100)+'<button class="btn primary" onclick="N.countdown(function(){N._flankerGame();})">Try Again</button><button class="btn" onclick="N.exit()">Back</button></div>';
+  document.onkeydown=null;
+};
+
+// ====== WORD SCRAMBLE ======
+N._ws={};
+N._scrambleIntro=function(){$c().innerHTML='<div class="instruction"><h2>Word Scramble</h2><p>Unscramble the letters to form a word.<br>Type fast — 60 seconds!</p><p style="color:var(--dim);font-size:0.7rem;">Press Enter to submit &middot; Skip = type "skip"</p><button class="btn primary" onclick="N.countdown(function(){N._scrambleGame();})">Start</button></div>';};
+N._scrambleGame=function(){
+  var words=['PLANET','BRIDGE','CASTLE','DRAGON','FOREST','GARDEN','HAMMER','ISLAND','JUNGLE','KNIGHT','LEMON','MIRROR','NEEDLE','OCEAN','PENCIL','ROCKET','SUNSET','TEMPLE','WINDOW','ANCHOR','BOTTLE','CANDLE','ENGINE','FALCON','GALAXY','HARBOR','JIGSAW','LANTERN','MARBLE','ORACLE','QUIVER','SADDLE','THUNDER','VELVET','WHISTLE','EMERALD','GLACIER','HORIZON','PHOENIX','SAPPHIRE','TORNADO','CRYSTAL','GRANITE'];
+  N._ws={score:0,skipped:0,idx:0,st:0,endTime:0,words:words,timerIv:null,done:false};
+  N._scrambleWord();
+};
+N._scrambleWord=function(){
+  var ws=N._ws,words=ws.words;
+  if(ws.timerIv){clearInterval(ws.timerIv);ws.timerIv=null;}
+  var rem=60;if(ws.st===0){ws.st=performance.now();ws.endTime=ws.st+60*1000;}
+  rem=Math.max(0,Math.round((ws.endTime-performance.now())/1000));
+  if(rem<=0||!N.active){N._scrambleDone();return;}
+  var word=words[ws.idx%words.length];ws.idx++;
+  var scrambled=word.split('').sort(function(){return Math.random()-0.5;}).join('');
+  while(scrambled===word&&word.length>3){scrambled=word.split('').sort(function(){return Math.random()-0.5;}).join('');}
+  $c().innerHTML='<div class="scramble-word">'+scrambled+'</div><input class="scramble-input" id="scrInput" type="text" autofocus maxlength="'+word.length+'" autocomplete="off" spellcheck="false"><div style="display:flex;gap:10px;justify-content:center;margin-top:8px;"><button class="btn small primary" id="scrSubmit">Submit</button><button class="btn small" onclick="N._scrambleSkip()">Skip</button></div><div class="math-timer" id="scrTimer">'+rem+'s</div><div style="color:var(--dim);font-size:0.85rem;">Solved: '+ws.score+' &middot; Skipped: '+ws.skipped+'</div><div class="progress-wrap"><div class="progress-fill" style="width:'+((1-rem/60)*100)+'%"></div></div>';
+  var inp=$e('scrInput');inp.focus();
+  function chk(){
+    var v=inp.value.trim().toUpperCase();
+    if(v===word){N.sfx.ok();ws.score++;}else{N.sfx.fail();}
+    N._scrambleWord();
+  }
+  $e('scrSubmit').onclick=chk;
+  inp.addEventListener('keydown',function(e){if(e.key==='Enter')chk();});
+  ws.timerIv=setInterval(function(){var tel=$e('scrTimer'),r=Math.max(0,Math.round((ws.endTime-performance.now())/1000));if(tel)tel.textContent=r+'s';if(r<=0){clearInterval(ws.timerIv);ws.timerIv=null;N._scrambleDone();}},300);
+};
+N._scrambleSkip=function(){N._ws.skipped++;N._scrambleWord();};
+N._scrambleDone=function(){
+  var ws=N._ws;
+  if(ws.done)return;
+  ws.done=true;
+  if(ws.timerIv){clearInterval(ws.timerIv);ws.timerIv=null;}
+  var sc=ws.score,gd=sc>=15?'SSS':sc>=10?'SS':sc>=6?'S':sc>=3?'A':sc>=1?'B':'C',gc=sc>=10?'var(--success)':sc>=6?'var(--accent)':sc>=3?'var(--warning)':'var(--accent2)';
+  if(sc>=15)N.flashScreen('gold');var imp=N.record('scramble',sc,true);
+  $c().innerHTML='<div class="results"><div class="score">'+sc+'</div><div class="grade" style="color:'+gc+'">'+gd+'</div><div class="stats">'+sc+' solved &middot; '+ws.skipped+' skipped &middot; 60s<br>'+(imp?'<span style="color:var(--success)">NEW PERSONAL BEST!</span><br>':'')+'</div>'+N.resultBar(sc,20)+'<button class="btn primary" onclick="N.countdown(function(){N._scrambleGame();})">Try Again</button><button class="btn" onclick="N.exit()">Back</button></div>';
+};
+
+// ====== MENTAL ROTATION ======
+N._mr={};
+N._rotationIntro=function(){$c().innerHTML='<div class="instruction"><h2>Mental Rotation</h2><p>One shape matches the target — but it\'s rotated.<br>Find it fast. Tests spatial reasoning.</p><p style="color:var(--dim);font-size:0.7rem;">10 rounds &middot; 4 choices per round</p><button class="btn primary" onclick="N.countdown(function(){N._rotationGame();})">Start</button></div>';};
+N._rotationGame=function(){
+  N._mr={round:0,total:10,score:0,correct:0,st:performance.now()};
+  N._rotationRound();
+};
+N._rotationRound=function(){
+  var mr=N._mr;if(!N.active||mr.round>=mr.total){N._rotationDone();return;}mr.round++;
+  // Generate a simple shape as SVG path
+  var shapes=[
+    'M0,-30 L20,15 L-20,15 Z',   // triangle
+    'M-25,-20 L25,-20 L25,20 L-25,20 Z', // square
+    'M0,-25 L15,-10 L15,15 L-15,15 L-15,-10 Z', // pentagon
+    'M0,-28 L16,-12 L16,12 L0,22 L-16,12 L-16,-12 Z', // hexagon
+    'M-20,-20 L5,-25 L25,-5 L20,15 L-10,25 L-25,5 Z', // irregular
+  ];
+  var shape=shapes[mr.round%shapes.length];
+  var correctRot=Math.floor(Math.random()*4)*90;
+  var rots=[correctRot];
+  while(rots.length<4){var r=Math.floor(Math.random()*4)*90;if(rots.indexOf(r)===-1)rots.push(r);}
+  for(var i=rots.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1)),tmp=rots[i];rots[i]=rots[j];rots[j]=tmp;}
+  var svgSize=120;
+  $c().innerHTML='<div style="text-align:center;"><div style="color:var(--dim);font-size:0.8rem;margin-bottom:8px;">Round '+mr.round+'/'+mr.total+' &middot; Score: '+mr.score+'</div><div style="display:flex;justify-content:center;gap:12px;flex-wrap:wrap;">'+
+    '<div style="border:2px solid var(--accent);border-radius:10px;padding:8px;"><svg width="'+svgSize+'" height="'+svgSize+'" viewBox="-35 -35 70 70"><path d="'+shape+'" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg><div style="font-size:0.65rem;color:var(--gold);margin-top:4px;">TARGET</div></div>'+
+    '</div><div style="margin-top:12px;color:var(--dim);font-size:0.8rem;">Which one matches the target?</div>'+
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;max-width:300px;margin:12px auto;">'+
+    rots.map(function(rot,i){return'<div class="pattern-opt" id="rotOpt'+i+'" style="padding:8px;display:flex;align-items:center;justify-content:center;" data-rot="'+rot+'" data-correct="'+(rot===correctRot)+'"><svg width="80" height="80" viewBox="-35 -35 70 70"><g transform="rotate('+rot+')"><path d="'+shape+'" fill="none" stroke="var(--text)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></g></svg></div>';}).join('')+
+    '</div><div class="progress-wrap"><div class="progress-fill" style="width:'+((mr.round/mr.total)*100)+'%"></div></div></div>';
+  var t0=performance.now();
+  document.querySelectorAll('.pattern-opt').forEach(function(opt){
+    opt.onclick=function(){
+      var correct=opt.dataset.correct==='true',rt=Math.round(performance.now()-t0);
+      if(correct){mr.correct++;mr.score+=Math.max(1,10-Math.floor(rt/500));opt.classList.add('correct-pick');N.sfx.ok();}
+      else{opt.classList.add('wrong-pick');N.sfx.fail();N.shake(2);
+        document.querySelectorAll('.pattern-opt').forEach(function(o){if(o.dataset.correct==='true')o.classList.add('correct-pick');});
+      }
+      document.querySelectorAll('.pattern-opt').forEach(function(o){o.onclick=null;});
+      setTimeout(function(){N._rotationRound();},800);
+    };
+  });
+};
+N._rotationDone=function(){
+  var mr=N._mr,sc=mr.score,gd=sc>=60?'SSS':sc>=40?'SS':sc>=25?'S':sc>=12?'A':sc>=5?'B':'C',gc=sc>=40?'var(--success)':sc>=25?'var(--accent)':sc>=12?'var(--warning)':'var(--accent2)';
+  if(sc>=60)N.flashScreen('gold');var imp=N.record('rotation',sc,true);
+  $c().innerHTML='<div class="results"><div class="score">'+sc+'<span style="font-size:1.3rem"> pts</span></div><div class="grade" style="color:'+gc+'">'+gd+'</div><div class="stats">'+mr.correct+'/'+mr.total+' correct &middot; Spatial reasoning<br>'+(imp?'<span style="color:var(--success)">NEW PERSONAL BEST!</span><br>':'')+'</div>'+N.resultBar(sc,70)+'<button class="btn primary" onclick="N.countdown(function(){N._rotationGame();})">Try Again</button><button class="btn" onclick="N.exit()">Back</button></div>';
+};
+
+// ====== AUDIO SEQUENCE ======
+N._as={};
+N._audioIntro=function(){$c().innerHTML='<div class="instruction"><h2>Audio Sequence</h2><p>Listen to the tone pattern, then repeat it<br>by clicking the colored tiles in order.</p><p style="color:var(--dim);font-size:0.7rem;">Each round adds one more tone</p><button class="btn primary" onclick="N.countdown(function(){N._audioGame();})">Start</button></div>';};
+N._audioGame=function(){
+  N._as={seq:[],pi:0,round:1,show:true,freqs:[261,329,392,523]}; // C E G C
+  N._audioAdd();
+};
+N._audioAdd=function(){
+  var as=N._as;as.seq.push(Math.floor(Math.random()*4));as.pi=0;as.show=true;N._audioShow();
+};
+N._audioShow=function(){
+  var as=N._as;
+  $c().innerHTML='<div class="seq-grid"><div class="seq-tile" data-idx="0"></div><div class="seq-tile" data-idx="1"></div><div class="seq-tile" data-idx="2"></div><div class="seq-tile" data-idx="3"></div></div><div style="margin-top:8px;color:var(--dim);font-size:0.85rem;" id="asMsg">Round '+as.round+' &middot; Listen...</div><div class="progress-wrap"><div class="progress-fill" style="width:'+Math.min(100,(as.round/20)*100)+'%"></div></div>';
+  var tiles=document.querySelectorAll('.seq-tile');
+  var i=0,iv=setInterval(function(){
+    if(i>0)tiles[as.seq[i-1]].classList.remove('lit');
+    if(i>=as.seq.length){clearInterval(iv);as.show=false;$e('asMsg').textContent='Round '+as.round+' \u00B7 Your turn!';N._audioEnable();return;}
+    tiles[as.seq[i]].classList.add('lit');
+    // Play tone
+    (function(){var c=new(window.AudioContext||window.webkitAudioContext)();if(!c)return;var o=c.createOscillator(),g=c.createGain();o.type='sine';o.frequency.setValueAtTime(as.freqs[as.seq[i]],c.currentTime);g.gain.setValueAtTime(0.12*N_volume,c.currentTime);g.gain.exponentialRampToValueAtTime(0.001,c.currentTime+0.35);o.connect(g);g.connect(c.destination);o.start();o.stop(c.currentTime+0.35);})();
+    i++;
+  },550);
+};
+N._audioEnable=function(){
+  var as=N._as,tiles=document.querySelectorAll('.seq-tile');
+  tiles.forEach(function(t){t.onclick=function(){if(as.show)return;var idx=parseInt(t.dataset.idx);
+    if(idx===as.seq[as.pi]){N.sfx.click();t.classList.add('active');setTimeout(function(){t.classList.remove('active');},180);
+      (function(){var c=new(window.AudioContext||window.webkitAudioContext)();if(!c)return;var o=c.createOscillator(),g=c.createGain();o.type='sine';o.frequency.setValueAtTime(as.freqs[idx],c.currentTime);g.gain.setValueAtTime(0.1*N_volume,c.currentTime);g.gain.exponentialRampToValueAtTime(0.001,c.currentTime+0.2);o.connect(g);g.connect(c.destination);o.start();o.stop(c.currentTime+0.2);})();
+      as.pi++;if(as.pi>=as.seq.length){as.round++;N.sfx.ok();$e('asMsg').textContent='Correct! Next...';setTimeout(function(){N._audioAdd();},700);}
+    }else{N.sfx.fail();N.shake(6);t.classList.add('wrong');tiles.forEach(function(x){x.onclick=null;});N._audioDone();}
+  };});
+};
+N._audioDone=function(){
+  var sc=N._as.round-1,gd=sc>=12?'SSS':sc>=9?'SS':sc>=7?'S':sc>=5?'A':sc>=3?'B':'C',gc=sc>=7?'var(--success)':sc>=4?'var(--accent)':sc>=2?'var(--warning)':'var(--accent2)';
+  if(sc>=12)N.flashScreen('gold');var imp=N.record('audio',sc,true);
+  $c().innerHTML='<div class="results"><div class="score">'+sc+'</div><div class="grade" style="color:'+gc+'">'+gd+'</div><div class="stats">'+sc+' tones in sequence<br>'+(imp?'<span style="color:var(--success)">NEW PERSONAL BEST!</span><br>':'')+'</div>'+N.resultBar(sc,15)+'<button class="btn primary" onclick="N.countdown(function(){N._audioGame();})">Try Again</button><button class="btn" onclick="N.exit()">Back</button></div>';
+};
+
+// ====== DAILY CHALLENGE ======
+N._dailyMode=false;N._dailyOrigExit=null;
+N.dailyChallenge=function(){
+  var today=new Date().toDateString(),s=N.getLS(),dc=s.daily||{};
+  if(dc.date===today&&dc.done){N.toast('Already done! Come back tomorrow.');return;}
+  var all=['reaction','sequence','aim','number','chimp','verbal','stroop','math','typing','visual','time','nback','gng','pattern','tracking','flanker','scramble','rotation','audio'];
+  var chosen=[];while(chosen.length<3){var t=all[Math.floor(Math.random()*all.length)];if(chosen.indexOf(t)===-1)chosen.push(t);}
+  dc={date:today,tests:chosen,done:false};s.daily=dc;N.setLS(s);
+  N.toast('Daily: '+chosen.map(function(x){return x.charAt(0).toUpperCase()+x.slice(1);}).join(', '));
+  N._dailyMode=true;N._dailyOrigExit=N.exit;var idx=0,completed=0;
+  // Show progress badge
+  var badge=document.createElement('div');badge.className='daily-badge';badge.id='dailyBadge';badge.textContent='Daily 0/3';document.body.appendChild(badge);
+  N.exit=function(){N.active=false;N.current=null;document.body.classList.remove('in-test');$e('testScreen').classList.remove('active');$e('app').style.display='';$c().innerHTML='';document.body.style.background='';document.onkeydown=null;idx++;completed++;var b=$e('dailyBadge');if(b)b.textContent='Daily '+completed+'/3';if(idx<3){N.toast('Next: '+dc.tests[idx]);setTimeout(function(){N.start(dc.tests[idx]);},600);}else{N._endDaily();}};
+  N.start(dc.tests[0]);
+};
+N._endDaily=function(){N._dailyMode=false;N.exit=N._dailyOrigExit;document.body.classList.remove('in-test');$e('testScreen').classList.remove('active');$e('app').style.display='';var s=N.getLS(),dc=s.daily||{};dc.done=true;var bonus=Math.floor(Math.random()*30)+20;s.totalScore=(s.totalScore||0)+bonus;s.daily=dc;N.setLS(s);N.updateUI();N.confetti(100);N.sfx.achieve();N.flashScreen('gold');N.toast('Daily complete! +'+bonus+' bonus XP!');var badge=$e('dailyBadge');if(badge)badge.remove();var btn=$e('dailyBtn');if(btn){btn.classList.add('done');btn.innerHTML='\u2713 DAILY DONE';}};
+(function(){var s=N.getLS(),dc=s.daily||{},today=new Date().toDateString();if(dc.date===today&&dc.done){var btn=$e('dailyBtn');if(btn){btn.classList.add('done');btn.innerHTML='\u2713 DAILY DONE';}}})();
+
+// ====== INIT ======
+(function(){
+  var s = N.getLS();
+  N.reconcileCheatXp(s);
+  N.setLS(s);
+})();
+N.updateUI();
+N.toast('Welcome to NeuroForge! Pick a test to begin.');
+console.log('%cNeuroForge %cv2.1 %cready','color:#00e5ff;font-size:16px;','color:#aaa;','color:#666;');
+window.addEventListener('error',function(e){
+  var el=$e('testContent');if(el)el.innerHTML='<div style="color:red;padding:16px;font-family:monospace;"><b>Error:</b> '+e.message+'<br>Line '+e.lineno+':'+e.colno+'</div>';
+  else alert('Error: '+e.message+' at line '+e.lineno);
+});
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('data:application/javascript,'+encodeURIComponent("self.addEventListener('install',function(e){e.waitUntil(self.skipWaiting());});self.addEventListener('activate',function(e){e.waitUntil(self.clients.claim());});self.addEventListener('fetch',function(e){e.respondWith(fetch(e.request).catch(function(){return caches.match(e.request);}));});")).catch(function(){});
+}
+var tests=['reaction','sequence','aim','number','chimp','verbal','stroop','math','typing','visual','time','nback','gng','pattern','tracking','flanker','scramble','rotation','audio'];
+document.querySelectorAll('#cardGrid .card').forEach(function(card,i){if(i<tests.length)card.addEventListener('click',function(){console.log('Card: '+tests[i]);N.start(tests[i]);});});
+N.renderStats();
+// Staggered card entrance
+
+N.initCloudPromise = Promise.resolve();
+function N_startCloud() {
+  if (!N.cloudReady()) return;
+  N.bootCloud();
+}
+if (typeof supabase !== 'undefined') N_startCloud();
+else {
+  var _cloudPoll = setInterval(function() {
+    if (typeof supabase !== 'undefined') { clearInterval(_cloudPoll); N_startCloud(); }
+  }, 100);
+  setTimeout(function() {
+    clearInterval(_cloudPoll);
+    if (!N.auth._bootStarted && N.cloudReady()) {
+      N.showAuthBanner('Cloud slow or blocked — brain games still work. For login, try Chrome.', 'info');
+    }
+  }, 12000);
+}
+
+document.querySelectorAll('#cardGrid .card').forEach(function(c,i){
+  c.classList.add('card-enter');c.style.animationDelay=(i*0.04)+'s';
+});
+
+// ===== CARD ICONS + PLAY BUTTON =====
+(function(){
+  var icons={reaction:'⚡',sequence:'🔵',aim:'🎯',number:'🔢',chimp:'🧠',verbal:'💬',stroop:'🌈',math:'➕',typing:'⌨️',visual:'👁️',time:'⏱️',nback:'🔄',gng:'🚦',pattern:'🧩',tracking:'👀',flanker:'↔️',scramble:'🔀',rotation:'🔃',audio:'🎵'};
+  document.querySelectorAll('#cardGrid .card').forEach(function(card){
+    var attr=card.getAttribute('onclick')||'';
+    var m=attr.match(/N\.start\('(\w+)'\)/);
+    if(!m||!icons[m[1]])return;
+    var ic=document.createElement('span');
+    ic.className='card-icon';ic.textContent=icons[m[1]];ic.setAttribute('aria-hidden','true');
+    card.insertBefore(ic,card.firstChild);
+    var pl=document.createElement('div');
+    pl.className='card-play';pl.textContent='PLAY →';pl.setAttribute('aria-hidden','true');
+    card.appendChild(pl);
+  });
+})();
+
+// ===== ROUND 3: DIFFICULTY DOTS + NEW BADGES + TAB SLIDER =====
+(function(){
+  var diff={reaction:1,aim:1,flanker:2,gng:2,stroop:2,visual:2,typing:2,math:2,time:2,
+            verbal:3,sequence:3,number:3,scramble:3,pattern:3,chimp:4,nback:4,tracking:4,rotation:4,audio:4};
+  var newGames=['audio','rotation','scramble','flanker','tracking'];
+
+  document.querySelectorAll('#cardGrid .card').forEach(function(card){
+    var m=(card.getAttribute('onclick')||'').match(/N\.start\('(\w+)'\)/);
+    if(!m)return;
+    var game=m[1];
+    // Difficulty dots
+    var d=diff[game]||2;
+    var wrap=document.createElement('div');
+    wrap.className='card-difficulty';
+    wrap.setAttribute('aria-label','Difficulty '+d+' of 5');
+    for(var i=1;i<=5;i++){var dot=document.createElement('span');dot.className='diff-dot '+(i<=d?'filled':'empty');wrap.appendChild(dot);}
+    card.appendChild(wrap);
+    // NEW badge
+    if(newGames.indexOf(game)!==-1){
+      var h2=card.querySelector('h2');
+      if(h2){var b=document.createElement('span');b.className='badge-new';b.textContent='NEW';b.setAttribute('aria-label','New game');h2.appendChild(b);}
+    }
+  });
+
+  // Animated sliding underline for tabs
+  var tabsEl=$e('tabs');
+  if(tabsEl){
+    var slider=document.createElement('div');
+    slider.className='tab-slider';
+    tabsEl.appendChild(slider);
+    var catColors={speed:'var(--accent2)',memory:'var(--accent)',focus:'#b347ea',logic:'var(--success)'};
+    function moveSlider(){
+      var active=tabsEl.querySelector('.tab-btn.active');
+      if(!active)return;
+      var tr=tabsEl.getBoundingClientRect(),ar=active.getBoundingClientRect();
+      slider.style.left=(ar.left-tr.left)+'px';
+      slider.style.width=ar.width+'px';
+      var cat=active.getAttribute('data-cat');
+      slider.style.background=cat?(catColors[cat]||'var(--accent)'):'var(--accent)';
+    }
+    tabsEl.querySelectorAll('.tab-btn').forEach(function(btn){
+      btn.addEventListener('click',function(){setTimeout(moveSlider,35);});
+    });
+    window.addEventListener('resize',moveSlider);
+    setTimeout(moveSlider,250);
+  }
+})();
+
+// ===== COUNT-UP ANIMATION FOR STATS =====
+(function(){
+  function countUp(el, dur) {
+    var target = parseInt(el.textContent) || 0;
+    if (target <= 0) return;
+    var current = 0, steps = dur / 16;
+    var inc = target / steps;
+    el.textContent = '0';
+    var iv = setInterval(function() {
+      current += inc;
+      if (current >= target) { current = target; clearInterval(iv); }
+      el.textContent = Math.floor(current).toLocaleString();
+    }, 16);
+  }
+  setTimeout(function() {
+    countUp($e('globalScore'), 1600);
+    countUp($e('testsTaken'), 1000);
+  }, 350);
+})();
+
+// ===== ROUND 4: CURSOR GLOW + ACTIVITY PILL + STAT-CARD STAGGER =====
+(function(){
+  // 1. Smooth lerp cursor glow — desktop only
+  if (!window.matchMedia('(pointer:coarse)').matches) {
+    var g = document.createElement('div');
+    g.className = 'cursor-glow';
+    document.body.appendChild(g);
+    var mx = window.innerWidth / 2, my = window.innerHeight / 2, cx = mx, cy = my;
+    document.addEventListener('mousemove', function(e){ mx = e.clientX; my = e.clientY; });
+    (function tick(){
+      cx += (mx - cx) * 0.1;
+      cy += (my - cy) * 0.1;
+      g.style.transform = 'translate(' + (cx - 180) + 'px,' + (cy - 180) + 'px)';
+      requestAnimationFrame(tick);
+    })();
+  }
+
+  // 2. "Today" activity pill — count tests done today from history
+  (function(){
+    var s = N.getLS(), today = new Date().toDateString(), n = 0;
+    if (s.history) {
+      Object.keys(s.history).forEach(function(k) {
+        var h = s.history[k];
+        if (!Array.isArray(h)) return;
+        h.forEach(function(e){ if (e && e.ts && new Date(e.ts).toDateString() === today) n++; });
+      });
+    }
+    if (n > 0) {
+      var bar = document.querySelector('.stats-bar');
+      if (bar) {
+        var p = document.createElement('div');
+        p.className = 'stat-pill streak-pill';
+        p.title = 'Tests completed today';
+        p.innerHTML = '<span class="icon">🔥</span><div><div class="val">' + n + '</div><div class="lbl">Today</div></div>';
+        bar.appendChild(p);
+      }
+    }
+  })();
+
+  // 3. Stagger stat-dash cards whenever they're injected
+  var dash = $e('statsDashContent');
+  if (dash) {
+    var mo = new MutationObserver(function() {
+      dash.querySelectorAll('.stat-card').forEach(function(c, i) {
+        c.style.animationDelay = (i * 0.04) + 's';
+      });
+    });
+    mo.observe(dash, { childList: true, subtree: true });
+  }
+})();
+</script>
 </body>
 </html>
