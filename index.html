@@ -572,6 +572,23 @@ body.in-test canvas#bg,body.in-test canvas#fxConfetti{display:none;}
 .stat-pill .icon{display:none!important;}
 .sound-toggle svg{display:block;}
 .btn-discord svg{display:block;}
+
+/* ---------- New games ---------- */
+.schulte-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;width:min(420px,88vw);aspect-ratio:1;}
+.schulte-cell{display:flex;align-items:center;justify-content:center;background:var(--surface2);border:1px solid var(--border);border-radius:10px;font-family:var(--font-mono);font-weight:700;font-size:clamp(1rem,3.6vw,1.5rem);color:var(--text);cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent;transition:background .12s,border-color .12s;}
+.schulte-cell:hover{border-color:var(--border-strong);}
+.schulte-cell.done{background:var(--accent-solid);border-color:var(--accent-solid);color:#fff;}
+.schulte-cell.miss{background:var(--accent2);border-color:var(--accent2);color:#fff;}
+
+.mm-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;width:min(380px,86vw);aspect-ratio:1;}
+.mm-cell{background:var(--surface2);border:1px solid var(--border);border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-family:var(--font);font-weight:700;font-size:clamp(1.1rem,4.2vw,1.7rem);color:var(--text);transition:background .15s,border-color .15s;user-select:none;-webkit-tap-highlight-color:transparent;}
+.mm-cell:hover{border-color:var(--border-strong);}
+.mm-cell.flip{background:var(--surface3);border-color:var(--accent);}
+.mm-cell.done{background:rgba(52,211,153,0.14);border-color:var(--success);color:var(--success);cursor:default;}
+.mm-cell .mm-face{pointer-events:none;}
+
+.count-area{position:relative;width:min(420px,88vw);height:clamp(280px,52vh,380px);background:var(--surface2);border:1px solid var(--border);border-radius:16px;overflow:hidden;}
+.count-dot{position:absolute;width:18px;height:18px;border-radius:50%;background:var(--accent);transform:translate(-50%,-50%);box-shadow:0 0 8px rgba(129,140,248,0.4);}
 </style>
 </head>
 <body>
@@ -696,6 +713,18 @@ body.in-test canvas#bg,body.in-test canvas#fxConfetti{display:none;}
     </div>
     <div class="card" onclick="N.start('audio')" data-cat="memory">
       <span class="chip chip-memory">Audio Mem</span><h2>Audio Sequence</h2><p>Hear the tone pattern, then repeat it. Pure sound-based memory.</p><div class="best" id="best-audio"></div>
+    </div>
+    <div class="card" onclick="N.start('schulte')" data-cat="focus">
+      <span class="chip chip-attn">Attention</span><h2>Schulte Table</h2><p>Find 1 to 25 in order on a 5&times;5 grid. Trains peripheral vision and scan speed.</p><div class="best" id="best-schulte"></div>
+    </div>
+    <div class="card" onclick="N.start('memmatch')" data-cat="memory">
+      <span class="chip chip-memory">Memory</span><h2>Memory Match</h2><p>Flip cards to find all 8 pairs in as little time as possible.</p><div class="best" id="best-memmatch"></div>
+    </div>
+    <div class="card" onclick="N.start('count')" data-cat="focus">
+      <span class="chip chip-search">Perception</span><h2>Quick Count</h2><p>Dots flash for a moment — count them before they vanish. Gets harder each round.</p><div class="best" id="best-count"></div>
+    </div>
+    <div class="card" onclick="N.start('backspan')" data-cat="memory">
+      <span class="chip chip-memory">Working Mem</span><h2>Reverse Digit Span</h2><p>Memorize a number, then type it backwards. How long can you hold it?</p><div class="best" id="best-backspan"></div>
     </div>
   </div>
 
@@ -1560,9 +1589,9 @@ N.updateUI=function(){
   var s=N.getLS(),b=s.bests||{};
   $e('globalScore').textContent=s.totalScore||0;
   $e('testsTaken').textContent=s.testsTaken||0;
-  var labels={reaction:1,sequence:1,aim:1,number:1,chimp:1,verbal:1,stroop:1,math:1,typing:1,visual:1,time:1,nback:1,gng:1,pattern:1,tracking:1,flanker:1,scramble:1,rotation:1,audio:1};
+  var labels={reaction:1,sequence:1,aim:1,number:1,chimp:1,verbal:1,stroop:1,math:1,typing:1,visual:1,time:1,nback:1,gng:1,pattern:1,tracking:1,flanker:1,scramble:1,rotation:1,audio:1,schulte:1,memmatch:1,count:1,backspan:1};
   for(var k in labels){var el=$e('best-'+k),v=b[k];
-    if(el)el.innerHTML=v!==undefined?'<span>Best: '+(k==='reaction'||k==='aim'?v+'ms':k==='number'?v+' digits':k==='verbal'||k==='visual'||k==='pattern'||k==='tracking'||k==='rotation'?v+' pts':k==='stroop'||k==='time'||k==='gng'||k==='flanker'?v+'%':k==='typing'?v+' WPM':k==='nback'?v+'-Back':k==='scramble'||k==='audio'?v+' words':v)+'</span>':'';
+    if(el)el.innerHTML=v!==undefined?'<span>Best: '+(k==='reaction'||k==='aim'?v+'ms':k==='number'||k==='backspan'?v+' digits':k==='schulte'||k==='memmatch'?v+'s':k==='count'?v+' pts':k==='verbal'||k==='visual'||k==='pattern'||k==='tracking'||k==='rotation'?v+' pts':k==='stroop'||k==='time'||k==='gng'||k==='flanker'?v+'%':k==='typing'?v+' WPM':k==='nback'?v+'-Back':k==='scramble'||k==='audio'?v+' words':v)+'</span>':'';
   }
   var top='--';
   if(b.reaction!==undefined&&b.reaction<200)top='SSS';else if(b.reaction!==undefined&&b.reaction<250)top='SS';else if(b.reaction!==undefined&&b.reaction<300)top='S';else if(b.sequence>=12)top='SS';else if(b.sequence>=8)top='S';else if(b.aim!==undefined&&b.aim<400)top='S';else if(b.number>=10)top='SS';else if(b.number>=7)top='S';else if(b.chimp>=9)top='SS';else if(b.chimp>=6)top='S';else if(b.verbal>=50)top='SS';else if(b.verbal>=25)top='S';else if(b.reaction!==undefined&&b.reaction<350)top='A';else if(b.typing>=80)top='SS';else if(b.typing>=60)top='S';else if(b.math>=40)top='SS';else if(b.math>=25)top='S';else if(b.visual>=80)top='SS';else if(b.visual>=50)top='S';else if(b.stroop>=95)top='SS';else if(b.stroop>=85)top='S';else if(b.time>=95)top='SS';else if(b.time>=80)top='S';  else if(b.nback>=5)top='SS';else if(b.nback>=3)top='S';
@@ -1665,7 +1694,7 @@ N.checkAchievements=function(){
   check('scrambleAch',b.scramble&&b.scramble>=12,'Word master!');
   check('rotationAch',b.rotation&&b.rotation>=50,'Spatial genius!');
   check('audioAch',b.audio&&b.audio>=10,'Audio memory beast!');
-  check('allTests',Object.keys(b).length>=19,'Every test completed!');
+  check('allTests',Object.keys(b).length>=23,'Every test completed!');
   s.achievements=prevAch;N.setLS(s);
 };
 
@@ -1700,9 +1729,9 @@ N.record=function(name,val,higher){
 // ====== STATS DASHBOARD ======
 N.renderStats=function(){
   var s=N.getLS(),b=s.bests||{},h=s.history||{},html='';
-  var labels={reaction:'Reaction',sequence:'Sequence',aim:'Aim Trainer',number:'Numbers',chimp:'Chimp',verbal:'Verbal',stroop:'Stroop',math:'Math',typing:'Typing',visual:'Visual',time:'Time',nback:'N-Back',gng:'Go/No-Go',pattern:'Pattern',tracking:'Tracking',flanker:'Flanker',scramble:'Scramble',rotation:'Rotation',audio:'Audio'};
-  var units={reaction:'ms',sequence:'',aim:'ms',number:'dig',chimp:'',verbal:'pts',stroop:'%',math:'',typing:'WPM',visual:'pts',time:'%',nback:'-B',gng:'%',pattern:'pts',tracking:'pts',flanker:'%',scramble:'',rotation:'pts',audio:''};
-  var maxes={reaction:500,sequence:15,aim:30000,number:15,chimp:10,verbal:50,stroop:100,math:40,typing:100,visual:80,time:100,nback:6,gng:100,pattern:80,tracking:60,flanker:100,scramble:20,rotation:70,audio:15};
+  var labels={reaction:'Reaction',sequence:'Sequence',aim:'Aim Trainer',number:'Numbers',chimp:'Chimp',verbal:'Verbal',stroop:'Stroop',math:'Math',typing:'Typing',visual:'Visual',time:'Time',nback:'N-Back',gng:'Go/No-Go',pattern:'Pattern',tracking:'Tracking',flanker:'Flanker',scramble:'Scramble',rotation:'Rotation',audio:'Audio',schulte:'Schulte',memmatch:'Match',count:'Quick Count',backspan:'Rev Span'};
+  var units={reaction:'ms',sequence:'',aim:'ms',number:'dig',chimp:'',verbal:'pts',stroop:'%',math:'',typing:'WPM',visual:'pts',time:'%',nback:'-B',gng:'%',pattern:'pts',tracking:'pts',flanker:'%',scramble:'',rotation:'pts',audio:'',schulte:'s',memmatch:'s',count:'',backspan:''};
+  var maxes={reaction:500,sequence:15,aim:30000,number:15,chimp:10,verbal:50,stroop:100,math:40,typing:100,visual:80,time:100,nback:6,gng:100,pattern:80,tracking:60,flanker:100,scramble:20,rotation:70,audio:15,schulte:60,memmatch:60,count:10,backspan:12};
   var any=false;
   for(var k in labels){
     var best=b[k],hist=(h[k]||[]).map(function(x){return x.value;});
@@ -1778,7 +1807,7 @@ N.sparklineHtml=function(data,h){if(!data||data.length<2)return'';var mv=Math.ma
 
 // ====== TEST DISPATCH ======
 N.start=function(type){N.current=type;N.active=true;N.open();
-  switch(type){case'reaction':N._reactionIntro();break;case'sequence':N._sequenceIntro();break;case'aim':N._aimIntro();break;case'number':N._numberIntro();break;case'chimp':N._chimpIntro();break;case'verbal':N._verbalIntro();break;case'stroop':N._stroopIntro();break;case'math':N._mathIntro();break;case'typing':N._typingIntro();break;case'visual':N._visualIntro();break;case'time':N._timeIntro();break;case'nback':N._nbackIntro();break;case'gng':N._gngIntro();break;case'pattern':N._patternIntro();break;case'tracking':N._trackingIntro();break;case'flanker':N._flankerIntro();break;case'scramble':N._scrambleIntro();break;case'rotation':N._rotationIntro();break;case'audio':N._audioIntro();break;}
+  switch(type){case'reaction':N._reactionIntro();break;case'sequence':N._sequenceIntro();break;case'aim':N._aimIntro();break;case'number':N._numberIntro();break;case'chimp':N._chimpIntro();break;case'verbal':N._verbalIntro();break;case'stroop':N._stroopIntro();break;case'math':N._mathIntro();break;case'typing':N._typingIntro();break;case'visual':N._visualIntro();break;case'time':N._timeIntro();break;case'nback':N._nbackIntro();break;case'gng':N._gngIntro();break;case'pattern':N._patternIntro();break;case'tracking':N._trackingIntro();break;case'flanker':N._flankerIntro();break;case'scramble':N._scrambleIntro();break;case'rotation':N._rotationIntro();break;case'audio':N._audioIntro();break;case'schulte':N._schulteIntro();break;case'memmatch':N._memmatchIntro();break;case'count':N._countIntro();break;case'backspan':N._backspanIntro();break;}
 };
 
 // ====== REACTION TIME ======
@@ -2444,6 +2473,122 @@ document.querySelectorAll('#cardGrid .card').forEach(function(c,i){
   c.classList.add('card-enter');c.style.animationDelay=(i*0.04)+'s';
 });
 
+// ====== SCHULTE TABLE ======
+N._schulteIntro=function(){$c().innerHTML='<div class="instruction"><h2>Schulte Table</h2><p>Click the numbers <b>1 to 25</b> in order, as fast as you can.<br>Keep your gaze near the centre and use peripheral vision.</p><p style="color:var(--dim);font-size:0.75rem;">5&times;5 grid &middot; wrong clicks just cost time</p><button class="btn primary" onclick="N.countdown(function(){N._schulteGame();})">Start</button></div>';};
+N._schulteGame=function(){
+  var nums=[];for(var i=1;i<=25;i++)nums.push(i);
+  for(var j=nums.length-1;j>0;j--){var r=Math.floor(Math.random()*(j+1)),t=nums[j];nums[j]=nums[r];nums[r]=t;}
+  var next=1,start=performance.now();
+  var cells=nums.map(function(n){return '<div class="schulte-cell" data-n="'+n+'">'+n+'</div>';}).join('');
+  $c().innerHTML='<div class="schulte-grid" id="schulteGrid">'+cells+'</div><div style="margin-top:14px;color:var(--dim);font-size:0.9rem;width:min(420px,88vw);display:flex;justify-content:space-between;">Find <b id="schulteNext" style="color:var(--accent)">1</b><span id="schulteTimer" style="font-family:var(--font-mono)">0.0s</span></div>';
+  $e('schulteGrid').querySelectorAll('.schulte-cell').forEach(function(c){
+    c.onclick=function(){
+      if(!N.active)return;var n=parseInt(c.dataset.n,10);
+      if(n===next){N.sfx.click();c.classList.add('done');next++;var nx=$e('schulteNext');if(nx)nx.textContent=next>25?'✓':next;if(next>25)N._schulteDone(performance.now()-start);}
+      else{N.sfx.fail();N.shake(2);c.classList.add('miss');setTimeout(function(){c.classList.remove('miss');},250);}
+    };
+  });
+  var tIv=setInterval(function(){if(!N.active||next>25){clearInterval(tIv);return;}var el=$e('schulteTimer');if(el)el.textContent=((performance.now()-start)/1000).toFixed(1)+'s';},100);
+};
+N._schulteDone=function(ms){
+  var sec=Math.round(ms/100)/10;
+  var gd=sec<20?'SSS':sec<28?'SS':sec<38?'S':sec<55?'A':'B',gc=sec<28?'var(--success)':sec<45?'var(--accent)':sec<60?'var(--warning)':'var(--accent2)';
+  if(sec<20)N.flashScreen('gold');
+  var imp=N.record('schulte',sec,false);
+  $c().innerHTML='<div class="results"><div class="score">'+sec+'<span style="font-size:1.3rem">s</span></div><div class="grade" style="color:'+gc+'">'+gd+'</div><div class="stats">All 25 found in '+sec+'s<br>'+(imp?'<span style="color:var(--success)">NEW PERSONAL BEST!</span><br>':'')+'</div><button class="btn primary" onclick="N.countdown(function(){N._schulteGame();})">Try Again</button><button class="btn" onclick="N.exit()">Back</button></div>';
+};
+
+// ====== MEMORY MATCH ======
+N._memmatchIntro=function(){$c().innerHTML='<div class="instruction"><h2>Memory Match</h2><p>Flip two cards at a time to find matching pairs.<br>Clear all 8 pairs in as little time as possible.</p><button class="btn primary" onclick="N.countdown(function(){N._memmatchGame();})">Start</button></div>';};
+N._memmatchGame=function(){
+  var syms=['A','B','C','D','E','F','G','H'],deck=syms.concat(syms);
+  for(var j=deck.length-1;j>0;j--){var r=Math.floor(Math.random()*(j+1)),t=deck[j];deck[j]=deck[r];deck[r]=t;}
+  var start=performance.now(),first=null,lock=false,matched=0,moves=0;
+  var cells=deck.map(function(s,i){return '<div class="mm-cell" data-i="'+i+'" data-s="'+s+'"><span class="mm-face"></span></div>';}).join('');
+  $c().innerHTML='<div class="mm-grid" id="mmGrid">'+cells+'</div><div style="margin-top:14px;color:var(--dim);font-size:0.9rem;width:min(380px,86vw);display:flex;justify-content:space-between;">Pairs <b id="mmPairs" style="color:var(--accent)">0</b>/8<span id="mmTimer" style="font-family:var(--font-mono)">0.0s</span></div>';
+  function flip(c){c.classList.add('flip');c.querySelector('.mm-face').textContent=c.dataset.s;}
+  function unflip(c){c.classList.remove('flip');c.querySelector('.mm-face').textContent='';}
+  $e('mmGrid').querySelectorAll('.mm-cell').forEach(function(c){
+    c.onclick=function(){
+      if(!N.active||lock||c.classList.contains('flip')||c.classList.contains('done'))return;
+      flip(c);N.sfx.click();
+      if(!first){first=c;return;}
+      moves++;
+      if(first.dataset.s===c.dataset.s){first.classList.add('done');c.classList.add('done');N.sfx.ok();matched++;var p=$e('mmPairs');if(p)p.textContent=matched;first=null;if(matched>=8)N._memmatchDone(performance.now()-start,moves);}
+      else{lock=true;var a=first,bc=c;first=null;N.sfx.fail();setTimeout(function(){unflip(a);unflip(bc);lock=false;},650);}
+    };
+  });
+  var tIv=setInterval(function(){if(!N.active||matched>=8){clearInterval(tIv);return;}var el=$e('mmTimer');if(el)el.textContent=((performance.now()-start)/1000).toFixed(1)+'s';},100);
+};
+N._memmatchDone=function(ms,moves){
+  var sec=Math.round(ms/100)/10;
+  var gd=sec<18?'SSS':sec<26?'SS':sec<36?'S':sec<50?'A':'B',gc=sec<26?'var(--success)':sec<40?'var(--accent)':sec<55?'var(--warning)':'var(--accent2)';
+  if(sec<18)N.flashScreen('gold');
+  var imp=N.record('memmatch',sec,false);
+  $c().innerHTML='<div class="results"><div class="score">'+sec+'<span style="font-size:1.3rem">s</span></div><div class="grade" style="color:'+gc+'">'+gd+'</div><div class="stats">8 pairs &middot; '+moves+' flips<br>'+(imp?'<span style="color:var(--success)">NEW PERSONAL BEST!</span><br>':'')+'</div><button class="btn primary" onclick="N.countdown(function(){N._memmatchGame();})">Try Again</button><button class="btn" onclick="N.exit()">Back</button></div>';
+};
+
+// ====== QUICK COUNT (SUBITIZING) ======
+N._countIntro=function(){$c().innerHTML='<div class="instruction"><h2>Quick Count</h2><p>A burst of dots flashes for a moment.<br>Count them, then type how many you saw.</p><p style="color:var(--dim);font-size:0.75rem;">10 rounds &middot; the count keeps growing &middot; within 1 still counts</p><button class="btn primary" onclick="N.countdown(function(){N._countGame();})">Start</button></div>';};
+N._countGame=function(){N._cnt={round:0,correct:0};N._countRound();};
+N._countRound=function(){
+  var c=N._cnt;if(!N.active)return;
+  if(c.round>=10){N._countDone(c.correct);return;}
+  c.round++;
+  var n=4+c.round*2-Math.floor(Math.random()*2);if(n<3)n=3;c.answer=n;
+  var dots='';for(var i=0;i<n;i++){dots+='<span class="count-dot" style="left:'+(8+Math.random()*84)+'%;top:'+(8+Math.random()*84)+'%"></span>';}
+  $c().innerHTML='<div class="count-area" id="countArea">'+dots+'</div><div style="margin-top:10px;color:var(--dim);font-size:0.85rem;">Round '+c.round+'/10 &middot; count the dots</div>';
+  var flashMs=Math.max(500,1100-c.round*55);
+  setTimeout(function(){if(N.active&&N.current==='count')N._countAsk();},flashMs);
+};
+N._countAsk=function(){
+  var c=N._cnt;
+  $c().innerHTML='<div class="instruction"><h2>How many dots?</h2><input class="num-input" id="countInput" type="text" inputmode="numeric" maxlength="3" autocomplete="off"><div style="margin-top:8px;color:var(--dim);font-size:0.8rem;">Round '+c.round+'/10 &middot; Score '+c.correct+'</div><button class="btn primary" style="margin-top:18px" onclick="N._countSubmit()">Submit</button></div>';
+  var inp=$e('countInput');if(inp){inp.focus();inp.addEventListener('keydown',function(e){if(e.key==='Enter')N._countSubmit();});}
+};
+N._countSubmit=function(){
+  var c=N._cnt,inp=$e('countInput');if(!inp)return;var v=parseInt(inp.value,10);if(isNaN(v))return;
+  var d=Math.abs(v-c.answer);
+  if(d===0){N.sfx.ok();c.correct++;N.toast('Exact! It was '+c.answer);}
+  else if(d<=1){N.sfx.click();c.correct++;N.toast('Within 1 — it was '+c.answer);}
+  else{N.sfx.fail();N.shake(3);N.toast('It was '+c.answer);}
+  setTimeout(function(){if(N.active)N._countRound();},750);
+};
+N._countDone=function(score){
+  var gd=score>=10?'SSS':score>=8?'SS':score>=6?'S':score>=4?'A':'B',gc=score>=8?'var(--success)':score>=5?'var(--accent)':score>=3?'var(--warning)':'var(--accent2)';
+  if(score>=10)N.flashScreen('gold');
+  var imp=N.record('count',score,true);
+  $c().innerHTML='<div class="results"><div class="score">'+score+'<span style="font-size:1.3rem">/10</span></div><div class="grade" style="color:'+gc+'">'+gd+'</div><div class="stats">'+score+' rounds counted right<br>'+(imp?'<span style="color:var(--success)">NEW PERSONAL BEST!</span><br>':'')+'</div><button class="btn primary" onclick="N.countdown(function(){N._countGame();})">Try Again</button><button class="btn" onclick="N.exit()">Back</button></div>';
+};
+
+// ====== REVERSE DIGIT SPAN ======
+N._backspanIntro=function(){$c().innerHTML='<div class="instruction"><h2>Reverse Digit Span</h2><p>A number appears briefly. When it disappears,<br>type the digits in <b>reverse</b> order.</p><p style="color:var(--dim);font-size:0.75rem;">Starts at 3 digits &middot; +1 each time you nail it</p><button class="btn primary" onclick="N.countdown(function(){N._backspanGame();})">Start</button></div>';};
+N._backspanGame=function(){N._bs={len:3};N._backspanShow();};
+N._backspanShow=function(){
+  var s=N._bs;if(!N.active)return;
+  var digits='';for(var i=0;i<s.len;i++)digits+=Math.floor(Math.random()*10);s.digits=digits;
+  $c().innerHTML='<div class="num-display" id="bsNum">'+digits+'</div><div style="color:var(--dim);font-size:0.85rem;">Memorize &middot; length '+s.len+'</div>';
+  setTimeout(function(){if(N.active&&N.current==='backspan')N._backspanAsk();},600+s.len*450);
+};
+N._backspanAsk=function(){
+  var s=N._bs;
+  $c().innerHTML='<div class="instruction"><h2>Type it backwards</h2><input class="num-input" id="bsInput" type="text" inputmode="numeric" maxlength="'+s.len+'" autocomplete="off"><div style="margin-top:8px;color:var(--dim);font-size:0.8rem;">length '+s.len+'</div><button class="btn primary" style="margin-top:18px" onclick="N._backspanSubmit()">Submit</button></div>';
+  var inp=$e('bsInput');if(inp){inp.focus();inp.addEventListener('keydown',function(e){if(e.key==='Enter')N._backspanSubmit();});}
+};
+N._backspanSubmit=function(){
+  var s=N._bs,inp=$e('bsInput');if(!inp)return;
+  var want=s.digits.split('').reverse().join('');
+  if(inp.value===want){N.sfx.ok();N.toast('Correct!');s.len++;setTimeout(function(){if(N.active)N._backspanShow();},700);}
+  else{N.sfx.fail();N.shake(4);N._backspanDone(s.len-1,want);}
+};
+N._backspanDone=function(score,want){
+  if(score<0)score=0;
+  var gd=score>=10?'SSS':score>=8?'SS':score>=6?'S':score>=4?'A':'B',gc=score>=8?'var(--success)':score>=5?'var(--accent)':score>=3?'var(--warning)':'var(--accent2)';
+  if(score>=9)N.flashScreen('gold');
+  var imp=N.record('backspan',score,true);
+  $c().innerHTML='<div class="results"><div class="score">'+score+'</div><div class="grade" style="color:'+gc+'">'+gd+'</div><div class="stats">Longest reverse span: '+score+' digits<br><span style="color:var(--dim)">answer was '+want+'</span><br>'+(imp?'<span style="color:var(--success)">NEW PERSONAL BEST!</span><br>':'')+'</div><button class="btn primary" onclick="N.countdown(function(){N._backspanGame();})">Try Again</button><button class="btn" onclick="N.exit()">Back</button></div>';
+};
+
 // ===== CARD ICONS + PLAY BUTTON =====
 (function(){
   var icons={reaction:'⚡',sequence:'🔵',aim:'🎯',number:'🔢',chimp:'🧠',verbal:'💬',stroop:'🌈',math:'➕',typing:'⌨️',visual:'👁️',time:'⏱️',nback:'🔄',gng:'🚦',pattern:'🧩',tracking:'👀',flanker:'↔️',scramble:'🔀',rotation:'🔃',audio:'🎵'};
@@ -2462,9 +2607,9 @@ document.querySelectorAll('#cardGrid .card').forEach(function(c,i){
 
 // ===== ROUND 3: DIFFICULTY DOTS + NEW BADGES + TAB SLIDER =====
 (function(){
-  var diff={reaction:1,aim:1,flanker:2,gng:2,stroop:2,visual:2,typing:2,math:2,time:2,
-            verbal:3,sequence:3,number:3,scramble:3,pattern:3,chimp:4,nback:4,tracking:4,rotation:4,audio:4};
-  var newGames=['audio','rotation','scramble','flanker','tracking'];
+  var diff={reaction:1,aim:1,flanker:2,gng:2,stroop:2,visual:2,typing:2,math:2,time:2,count:2,
+            verbal:3,sequence:3,number:3,scramble:3,pattern:3,schulte:3,memmatch:3,backspan:3,chimp:4,nback:4,tracking:4,rotation:4,audio:4};
+  var newGames=['schulte','memmatch','count','backspan'];
 
   document.querySelectorAll('#cardGrid .card').forEach(function(card){
     var m=(card.getAttribute('onclick')||'').match(/N\.start\('(\w+)'\)/);
