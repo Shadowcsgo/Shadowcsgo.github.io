@@ -1030,67 +1030,96 @@ function genPalace(diff){
    PROCEDURAL GENERATORS  (effectively unlimited variety)
    ================================================================= */
 
-/* ---- INCONSISTENCY: pick one of several numeric/logical families ---- */
+/* ---- INCONSISTENCY: narrative "tells" — spot the impossible detail, L-style ----
+   These are qualitative contradictions you notice, not sums you compute. Each
+   template randomizes surface details (names, times, objects) for variety.   */
+const SUS = ['Mr Vane','Mrs Hart','Dr Lowe','Colonel Pike','Miss Reed','the valet','the butler','Mrs Crane','Lord Ashby','the curator'];
+const clock = (h,m) => String(h).padStart(2,'0')+':'+String(m).padStart(2,'0');
+
 function genInconsistency(){
-  return pick([genTimeContradiction, genGlassCount, genMoneySplit, genSpeedDistance])();
+  return pick(INCON_TELLS)();
 }
-
-/* glasses vs guests: each guest poured one glass, but the count is wrong */
-function genGlassCount(){
-  const g = 3 + rand(4);                       // 3..6 guests
-  const drink = pick(['wine','brandy','sherry','port','whisky','claret']);
-  const k = g + pick([-2,-1,1]);               // a wrong count (>=1, since g>=3)
-  return {
-    question:'A host describes the evening. Which statement contradicts the others?',
-    options:[
-      'All '+g+' guests arrived together and stayed until the body was found.',
-      'I poured every guest one glass of '+drink+' from the single bottle I opened.',
-      'When the police arrived, exactly '+k+' used glasses stood on the table.',
-      'No one else entered or left the room all evening.'
-    ],
-    correct:2,
-    explanation:'<b>'+g+'</b> guests, each poured one glass, nobody else present → there should be <b>'+g+'</b> used glasses, not '+k+'. The glass count is the line that cannot hold.'
-  };
-}
-
-/* money split: the gifts already use the whole balance, so "kept" is impossible */
-function genMoneySplit(){
-  const per = pick([200,300,400,500]);
-  const n   = 2 + rand(3);                      // 2..4 beneficiaries
-  const total = per*n;
-  const kept = pick([100,150,200,250]);
-  const kin = n===2 ? 'nieces' : 'nephews';
-  return {
-    question:'The will and the bank record are read together. Which line cannot be true?',
-    options:[
-      'She withdrew her entire balance of £'+total+' that week.',
-      'She gave £'+per+' to each of her '+n+' '+kin+'.',
-      'She kept the remaining £'+kept+' in cash for herself.',
-      'Every withdrawal was made at the same High Street branch.'
-    ],
-    correct:2,
-    explanation:'£'+per+' × '+n+' = £'+total+', which already uses the whole balance. Nothing is left over, so the “remaining £'+kept+'” is impossible.'
-  };
-}
-
-/* speed × time must equal distance */
-function genSpeedDistance(){
-  const speed = pick([30,40,50,60]);
-  const mins  = pick([30,45,60,90]);
-  const real  = Math.round(speed*mins/60);
-  const claimed = real + pick([5,8,10,12,15]);  // overstated distance
-  return {
-    question:'A driver’s statement is checked against the route. Which claim is inconsistent?',
-    options:[
-      'I drove a steady '+speed+' mph the whole way, without stopping.',
-      'The journey took me exactly '+mins+' minutes, door to door.',
-      'By the odometer I had covered '+claimed+' miles.',
-      'I filled the tank before I set off.'
-    ],
-    correct:2,
-    explanation:'At <b>'+speed+' mph</b> for <b>'+mins+' minutes</b> you cover '+speed+'×'+mins+'⁄60 = <b>'+real+' miles</b>, not '+claimed+'. The distance contradicts the stated speed and time.'
-  };
-}
+const INCON_TELLS = [
+  /* gloves worn throughout, yet clear fingerprints */
+  () => { const obj = pick(['the till','the brass handle','the safe dial','the window latch','the letter-opener']);
+    return { question:'A robbery report is read out. Which statement cannot stand with the rest?',
+      options:[
+        'The robber wore thick leather gloves the entire time.',
+        'He emptied the register and was gone in under a minute.',
+        'A clear set of his fingerprints was lifted from '+obj+'.',
+        'CCTV caught him entering at '+clock(20+rand(3), pick([5,10,15,40]))+'.'
+      ], correct:2,
+      explanation:'Gloves worn the whole time are incompatible with a clear set of his fingerprints on '+obj+'. One of those two must be false — the prints are the tell.' }; },
+  /* "never left" vs an exit timestamp */
+  () => { const h = 17+rand(2), m = pick([5,10,15,20]);
+    return { question:'Which line in this alibi is internally impossible?',
+      options:[
+        'He swore he never left the office after '+clock(h,0)+'.',
+        'His parking ticket was stamped leaving the garage at '+clock(h,m)+'.',
+        'The garage is in the basement of the same building.',
+        'His secretary went home at '+clock(h,0)+' sharp.'
+      ], correct:0,
+      explanation:'A garage-exit stamp at '+clock(h,m)+' directly contradicts “never left after '+clock(h,0)+'.” The physical record beats the spoken claim.' }; },
+  /* warm drink vs an earlier time of death */
+  () => { const who = pick(SUS), drink = pick(['tea','coffee','cocoa']); const death = 1+rand(3), found = 8+rand(2);
+    return { question:'The housekeeper’s statement is examined. Which detail can’t be true given the others?',
+      options:[
+        'Forensics fixed the time of death at about '+clock(death,0)+'.',
+        who+'’s '+drink+' was still warm when the body was found at '+clock(found,0)+'.',
+        'The study door had been locked from the inside.',
+        'No one else held a key to the room.'
+      ], correct:1,
+      explanation:'If death was around '+clock(death,0)+', a cup poured before then would be stone cold by '+clock(found,0)+'. “Still warm” is incompatible with the established time of death.' }; },
+  /* snow falling all night vs crisp footprints */
+  () => ({ question:'Which statement contradicts the established facts at the cabin?',
+      options:[
+        'The lake had been frozen solid for a week.',
+        'Heavy snow fell without a break all through the night.',
+        'A single trail of fresh muddy footprints led to the door.',
+        'No vehicle could have reached the cabin in those conditions.'
+      ], correct:2,
+      explanation:'Snow falling all night would bury any earlier prints. A crisp trail of muddy — not snow-filled — footprints doesn’t fit: they were made after the snow stopped, or staged.' }),
+  /* the dog that didn't bark (Silver Blaze) */
+  () => { const dog = pick(['terrier','mastiff','collie','wolfhound','spaniel']);
+    return { question:'A break-in account. Which claim is in tension with the others?',
+      options:[
+        'The '+dog+' barks furiously at every stranger who comes near.',
+        'An intruder crossed the garden and forced the back door at midnight.',
+        'The family slept undisturbed and the '+dog+' never made a sound.',
+        'Nothing of value was taken from the house.'
+      ], correct:2,
+      explanation:'A dog that barks at every stranger, yet stays silent while one breaks in, is the contradiction — the intruder was likely not a stranger. The silent dog is the tell.' }; },
+  /* still on the wall after it was reported stolen */
+  () => { const m1 = pick([15,30]), m2 = m1 + pick([10,15]);
+    return { question:'A gallery theft. Which statement is inconsistent with the timeline?',
+      options:[
+        'It was reported stolen at '+clock(11,m1)+'.',
+        'A guard saw the thief flee the east door at '+clock(11,m2)+'.',
+        'The gallery’s own camera photographed it on the wall at '+clock(12,0)+'.',
+        'The empty frame was found in the alley by '+clock(13,0)+'.'
+      ], correct:2,
+      explanation:'If it was gone by '+clock(11,m1)+' and the thief fled at '+clock(11,m2)+', it cannot still hang on the wall at noon. The midday photo is the odd one out.' }; },
+  /* total darkness vs a detailed face sighting */
+  () => { const who = pick(SUS), eye = pick(['blue','grey','green','hazel']);
+    return { question:'A witness statement is tested. Which line cannot hold with the rest?',
+      options:[
+        'The power had failed and the house was in total darkness.',
+        'The intruder carried no torch and struck no light.',
+        who+' clearly saw the intruder’s face and even their '+eye+' eyes.',
+        'The curtains were drawn and the shutters closed.'
+      ], correct:2,
+      explanation:'In total darkness, with no light source, no one could make out a face — let alone eye colour. The detailed sighting contradicts the blackout.' }; },
+  /* phone "switched off" vs a logged call */
+  () => { const who = pick(SUS), h = 20+rand(3), m = pick([12,27,41,55]);
+    return { question:'The phone records are read into evidence. Which statement is impossible?',
+      options:[
+        who+' insisted their phone was switched off all evening.',
+        'The network logged a call made from that phone at '+clock(h,m)+'.',
+        'The handset was later found in a desk drawer.',
+        'The office was locked at six.'
+      ], correct:1,
+      explanation:'A switched-off phone cannot place a call. The logged call at '+clock(h,m)+' contradicts the claim that it was off all evening.' }; }
+];
 
 /* ---- DEDUCTION: rotate over several airtight logical templates ---- */
 function genDeduction(){
