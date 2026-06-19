@@ -1,0 +1,1288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<!-- __BASE_HREF__ -->
+<meta charset="UTF-8">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover">
+<title>L Protocol — Deduction Training</title>
+<meta name="description" content="L Protocol — a daily deduction-training drill. Sharpen observation, logic, Bayesian reasoning and inconsistency-spotting like a master detective.">
+<meta name="theme-color" content="#08080a">
+<meta name="color-scheme" content="dark">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&family=Inter:wght@400;500;600&display=swap');
+
+:root{
+  --bg:#08080a; --panel:#0f0f12; --panel2:#16161b; --line:#23232b;
+  --ink:#e9e9ef; --dim:#7a7a88; --faint:#4a4a56;
+  --accent:#e6e6ea; --good:#54e08a; --bad:#ff5d6c; --warn:#ffd25a; --info:#5ab0ff;
+  --mono:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{background:var(--bg);color:var(--ink);font-family:var(--mono);min-height:100%;}
+body{-webkit-font-smoothing:antialiased;line-height:1.5;background-image:radial-gradient(circle at 50% -10%,rgba(255,255,255,0.035),transparent 60%);}
+a{color:inherit;}
+.wrap{max-width:760px;margin:0 auto;padding:26px 18px 80px;}
+
+/* header */
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:26px;}
+.brand{display:flex;align-items:center;gap:14px;}
+.glyph{font-family:Georgia,'Times New Roman',serif;font-size:46px;line-height:1;font-weight:700;color:#fff;
+  width:58px;height:58px;display:flex;align-items:center;justify-content:center;border:1px solid var(--line);
+  border-radius:12px;background:var(--panel);box-shadow:inset 0 0 30px rgba(255,255,255,0.03);}
+.brand h1{font-size:1.15rem;letter-spacing:6px;font-weight:800;}
+.brand .sub{font-size:0.62rem;letter-spacing:3px;color:var(--dim);text-transform:uppercase;margin-top:2px;}
+.back{font-size:0.68rem;letter-spacing:1px;color:var(--dim);text-decoration:none;border:1px solid var(--line);
+  padding:7px 12px;border-radius:9px;background:var(--panel);white-space:nowrap;}
+.back:hover{color:var(--ink);border-color:var(--faint);}
+
+/* auth strip */
+.authbar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;
+  background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:10px 14px;margin-bottom:22px;font-size:0.74rem;}
+.authbar .who{color:var(--dim);}
+.authbar .who b{color:var(--ink);}
+.banner{font-size:0.7rem;color:var(--warn);background:rgba(255,210,90,0.07);border:1px solid rgba(255,210,90,0.2);
+  border-radius:9px;padding:9px 12px;margin-bottom:18px;display:none;}
+.banner.show{display:block;}
+
+/* buttons */
+.btn{font-family:var(--mono);font-size:0.74rem;letter-spacing:1px;color:var(--ink);background:var(--panel2);
+  border:1px solid var(--line);border-radius:9px;padding:9px 16px;cursor:pointer;transition:.15s;text-transform:uppercase;font-weight:600;}
+.btn:hover{border-color:var(--faint);background:#1d1d24;}
+.btn:disabled{opacity:.4;cursor:default;}
+.btn.primary{background:var(--ink);color:#0a0a0c;border-color:var(--ink);font-weight:800;}
+.btn.primary:hover{opacity:.9;background:#fff;}
+.btn.ghost{background:transparent;}
+.btn.big{width:100%;padding:16px;font-size:0.92rem;letter-spacing:2px;}
+
+/* dashboard */
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px;}
+.metric{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 14px;text-align:center;}
+.metric .v{font-size:1.7rem;font-weight:800;letter-spacing:1px;}
+.metric .v small{font-size:0.8rem;color:var(--dim);font-weight:500;}
+.metric .k{font-size:0.6rem;letter-spacing:2px;color:var(--dim);text-transform:uppercase;margin-top:4px;}
+.metric.flame .v{color:var(--warn);}
+
+.section{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:18px;}
+.section h3{font-size:0.7rem;letter-spacing:3px;color:var(--dim);text-transform:uppercase;margin-bottom:14px;font-weight:700;}
+
+.catrow{display:flex;align-items:center;gap:12px;margin-bottom:11px;}
+.catrow .ic{width:26px;text-align:center;font-size:1rem;}
+.catrow .nm{flex:0 0 150px;font-size:0.74rem;}
+.catrow .bar{flex:1;height:8px;background:var(--panel2);border-radius:5px;overflow:hidden;border:1px solid var(--line);}
+.catrow .fill{height:100%;border-radius:5px;background:var(--good);transition:width .6s;}
+.catrow .pct{flex:0 0 64px;text-align:right;font-size:0.72rem;color:var(--dim);}
+.catrow.weak .nm{color:var(--warn);}
+.catrow.weak .fill{background:var(--warn);}
+.catrow .tag{font-size:0.55rem;letter-spacing:1px;color:var(--warn);border:1px solid rgba(255,210,90,.3);border-radius:6px;padding:1px 5px;margin-left:6px;}
+
+#chart{width:100%;height:160px;display:block;}
+.chart-empty{color:var(--faint);font-size:0.72rem;text-align:center;padding:40px 0;}
+
+/* free-training panel */
+.train-sub{color:var(--dim);font-size:0.74rem;line-height:1.5;margin:-4px 0 14px;}
+.chip-label{font-size:0.58rem;letter-spacing:2px;color:var(--faint);text-transform:uppercase;margin:0 0 7px;}
+.chip-row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;}
+.tchip{font-family:var(--mono);font-size:0.74rem;letter-spacing:1px;color:var(--dim);background:var(--panel2);
+  border:1px solid var(--line);border-radius:9px;padding:8px 13px;cursor:pointer;transition:.15s;}
+.tchip:hover{border-color:var(--faint);color:var(--ink);}
+.tchip.sel{background:var(--ink);color:#0a0a0c;border-color:var(--ink);font-weight:700;}
+
+/* stage (session) */
+#stage{display:none;}
+#stage.on{display:block;}
+
+/* training HUD */
+.hud{display:flex;align-items:stretch;gap:8px;margin-bottom:18px;}
+.hud-cell{flex:1;text-align:center;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:8px 4px;}
+.hud-cell span{display:block;font-size:1.15rem;font-weight:800;line-height:1.2;}
+.hud-cell small{font-size:0.5rem;letter-spacing:1.5px;color:var(--dim);text-transform:uppercase;}
+.hud #hStreak{color:var(--warn);}
+.hud .btn{margin:0;flex:0 0 auto;padding:9px 14px;}
+.btn.stop{color:var(--bad);border-color:rgba(255,93,108,0.4);}
+.btn.stop:hover{background:rgba(255,93,108,0.12);border-color:var(--bad);}
+.prog{display:flex;align-items:center;gap:10px;margin-bottom:18px;font-size:0.66rem;color:var(--dim);letter-spacing:1px;}
+.prog .track{flex:1;height:5px;background:var(--panel2);border:1px solid var(--line);border-radius:4px;overflow:hidden;}
+.prog .pf{height:100%;background:var(--ink);transition:width .3s;}
+.drill{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px;}
+.kicker{font-size:0.6rem;letter-spacing:3px;text-transform:uppercase;color:var(--info);margin-bottom:12px;display:flex;gap:8px;align-items:center;}
+.kicker .lv{color:var(--dim);border:1px solid var(--line);border-radius:5px;padding:0 6px;letter-spacing:1px;}
+.scenario{font-family:Inter,sans-serif;font-size:0.98rem;line-height:1.6;color:#dcdce4;background:var(--panel2);
+  border-left:2px solid var(--faint);border-radius:0 8px 8px 0;padding:14px 16px;margin-bottom:16px;white-space:pre-line;}
+.qtext{font-size:0.86rem;font-weight:600;margin-bottom:14px;line-height:1.5;}
+.opts{display:flex;flex-direction:column;gap:9px;}
+.opt{font-family:var(--mono);text-align:left;font-size:0.82rem;color:var(--ink);background:var(--panel2);
+  border:1px solid var(--line);border-radius:10px;padding:13px 15px;cursor:pointer;transition:.12s;line-height:1.45;}
+.opt:hover:not(:disabled){border-color:var(--faint);background:#1d1d24;}
+.opt:disabled{cursor:default;}
+.opt.correct{border-color:var(--good);background:rgba(84,224,138,.1);color:#cfeedd;}
+.opt.wrong{border-color:var(--bad);background:rgba(255,93,108,.1);color:#ffd6da;}
+.opt .mk{float:right;font-weight:800;}
+
+/* feedback */
+.fb{margin-top:18px;border-radius:11px;padding:15px 16px;font-family:Inter,sans-serif;font-size:0.86rem;line-height:1.6;display:none;}
+.fb.show{display:block;}
+.fb.ok{background:rgba(84,224,138,.08);border:1px solid rgba(84,224,138,.28);}
+.fb.no{background:rgba(255,93,108,.08);border:1px solid rgba(255,93,108,.28);}
+.fb .verdict{font-family:var(--mono);font-weight:800;letter-spacing:2px;font-size:0.72rem;text-transform:uppercase;margin-bottom:8px;}
+.fb.ok .verdict{color:var(--good);}
+.fb.no .verdict{color:var(--bad);}
+.fb .why b{color:var(--ink);}
+.fb-actions{margin-top:16px;text-align:right;}
+
+/* slider */
+.slider-val{font-size:2.4rem;font-weight:800;text-align:center;margin:8px 0 4px;letter-spacing:2px;}
+input[type=range]{width:100%;-webkit-appearance:none;appearance:none;height:6px;border-radius:4px;
+  background:linear-gradient(90deg,var(--bad),var(--warn),var(--good));outline:none;margin:14px 0;}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;background:#fff;
+  border:3px solid #0a0a0c;cursor:pointer;box-shadow:0 0 0 1px var(--line);}
+input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;background:#fff;border:3px solid #0a0a0c;cursor:pointer;}
+.scale-ends{display:flex;justify-content:space-between;font-size:0.62rem;color:var(--faint);letter-spacing:1px;}
+
+/* observe / memory */
+.reveal-wrap{text-align:center;}
+.timer{height:5px;background:var(--panel2);border:1px solid var(--line);border-radius:4px;overflow:hidden;margin-bottom:16px;}
+.timer .tf{height:100%;background:var(--info);width:100%;}
+.ogrid{display:grid;gap:7px;justify-content:center;margin:6px auto 4px;}
+.ocell{width:46px;height:46px;display:flex;align-items:center;justify-content:center;font-size:1.5rem;
+  background:var(--panel2);border:1px solid var(--line);border-radius:9px;}
+.sh{display:inline-block;width:24px;height:24px;background:var(--c,#8b949e);}
+.sh.tri{width:0;height:0;background:transparent;border-left:13px solid transparent;border-right:13px solid transparent;border-bottom:23px solid var(--c,#8b949e);}
+.sh.dia{transform:rotate(45deg);width:20px;height:20px;}
+.memlist{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin:6px 0;}
+.memitem{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:12px 16px;font-size:1.05rem;display:flex;gap:8px;align-items:center;}
+.memitem .n{font-size:0.7rem;color:var(--dim);}
+.tiles{display:flex;flex-wrap:wrap;gap:9px;justify-content:center;margin-top:6px;}
+.tile{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:12px 16px;font-size:1.05rem;cursor:pointer;transition:.12s;}
+.tile:hover:not(:disabled){border-color:var(--faint);}
+.tile:disabled{opacity:.3;cursor:default;}
+.tile.picked{border-color:var(--info);background:rgba(90,176,255,.12);}
+.picked-order{min-height:30px;display:flex;flex-wrap:wrap;gap:7px;justify-content:center;margin:4px 0 14px;}
+.picked-order .p{background:var(--panel2);border:1px solid var(--faint);border-radius:8px;padding:6px 12px;font-size:1rem;}
+
+/* summary */
+.sum-score{text-align:center;font-size:3rem;font-weight:800;letter-spacing:2px;margin:6px 0;}
+.sum-score small{font-size:1rem;color:var(--dim);font-weight:500;}
+.sum-line{display:flex;justify-content:space-between;font-size:0.78rem;padding:9px 0;border-bottom:1px solid var(--line);}
+.sum-line:last-child{border-bottom:none;}
+.sum-line .r{color:var(--good);}
+.sum-line .w{color:var(--bad);}
+.streak-up{text-align:center;color:var(--warn);font-size:0.8rem;letter-spacing:1px;margin:14px 0;}
+
+.foot{text-align:center;color:var(--faint);font-size:0.62rem;letter-spacing:1px;margin-top:30px;line-height:1.8;}
+.foot a{color:var(--dim);text-decoration:none;cursor:pointer;}
+.foot a:hover{color:var(--ink);}
+/* line-icon sizing per context */
+.cic{width:16px;height:16px;display:inline-block;vertical-align:-3px;}
+.catrow .ic{display:flex;align-items:center;justify-content:center;color:var(--dim);}
+.catrow .ic .cic{width:19px;height:19px;vertical-align:0;}
+.catrow.weak .ic{color:var(--warn);}
+.kicker .cic{width:15px;height:15px;vertical-align:-2px;}
+.sum-line .cic{width:15px;height:15px;margin-right:5px;color:var(--dim);}
+.tchip.ic-chip{padding:8px 12px;line-height:0;color:var(--dim);}
+.tchip.ic-chip .cic{width:19px;height:19px;vertical-align:middle;}
+.tchip.ic-chip:hover,.tchip.ic-chip.sel{color:inherit;}
+.tchip.ic-chip.sel{color:#0a0a0c;}
+
+/* keyboard accessibility */
+.btn:focus-visible,.opt:focus-visible,.tchip:focus-visible,.tile:focus-visible,
+.back:focus-visible,input[type=range]:focus-visible{outline:2px solid var(--info);outline-offset:2px;}
+.opt:focus-visible{outline-offset:-2px;}
+
+@media(max-width:520px){
+  .wrap{padding:20px 14px 70px;}
+  .catrow .nm{flex-basis:108px;}
+  .ocell{width:40px;height:40px;font-size:1.3rem;}
+  .glyph{width:48px;height:48px;font-size:38px;}
+  .hud-cell span{font-size:1rem;}
+  .scenario{font-size:0.92rem;}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div class="brand">
+      <div class="glyph">L</div>
+      <div>
+        <h1>PROTOCOL</h1>
+        <div class="sub">Deduction Training</div>
+      </div>
+    </div>
+    <a class="back" href="index.html">&#8592; NeuroForge</a>
+  </div>
+
+  <div class="authbar" id="authbar">
+    <span class="who" id="who">Loading&#8230;</span>
+    <span id="authActions"></span>
+  </div>
+
+  <div class="banner" id="banner"></div>
+
+  <!-- DASHBOARD -->
+  <div id="dash">
+    <div class="grid3">
+      <div class="metric flame"><div class="v" id="mStreak">0</div><div class="k">Day Streak</div></div>
+      <div class="metric"><div class="v" id="mSessions">0</div><div class="k">Sessions</div></div>
+      <div class="metric"><div class="v" id="mAcc">--<small>%</small></div><div class="k">Accuracy</div></div>
+    </div>
+
+    <button class="btn primary big" id="startBtn" onclick="LP.startSession()">Start Today&#39;s Session</button>
+    <div id="todayNote" style="text-align:center;font-size:0.68rem;color:var(--dim);margin:10px 0 20px;letter-spacing:1px;"></div>
+
+    <div class="section train-panel">
+      <h3>Free Training</h3>
+      <div class="train-sub">Drill for as long as you like — difficulty adapts as you go. Train an hour, or until you stop.</div>
+      <div class="chip-label">Duration</div>
+      <div class="chip-row" id="durRow">
+        <button class="tchip sel" onclick="LP.pickDur(this,10)">10 min</button>
+        <button class="tchip" onclick="LP.pickDur(this,30)">30 min</button>
+        <button class="tchip" onclick="LP.pickDur(this,60)">1 hour</button>
+        <button class="tchip" onclick="LP.pickDur(this,120)">2 hours</button>
+        <button class="tchip" onclick="LP.pickDur(this,0)">&#8734; Until I stop</button>
+      </div>
+      <div class="chip-label">Focus</div>
+      <div class="chip-row" id="focusRow"><!-- focus chips built from CATS --></div>
+      <button class="btn primary big" onclick="LP.startTraining()">Begin Training</button>
+    </div>
+
+    <div class="section">
+      <h3>Accuracy by Category</h3>
+      <div id="cats"></div>
+    </div>
+
+    <div class="section">
+      <h3>Session Accuracy &#183; last 14</h3>
+      <canvas id="chart" width="700" height="160"></canvas>
+    </div>
+  </div>
+
+  <!-- SESSION STAGE -->
+  <div id="stage">
+    <div class="prog" id="progBar">
+      <span id="progLabel">DRILL 1 / 6</span>
+      <div class="track"><div class="pf" id="progFill" style="width:0%"></div></div>
+      <span id="progScore">0</span>
+    </div>
+    <div class="hud" id="hud" style="display:none">
+      <div class="hud-cell"><span id="hTime">00:00</span><small>Time</small></div>
+      <div class="hud-cell"><span id="hDone">0</span><small>Drills</small></div>
+      <div class="hud-cell"><span id="hAcc">0%</span><small>Accuracy</small></div>
+      <div class="hud-cell"><span id="hStreak">0</span><small>Run</small></div>
+      <button class="btn stop" id="endBtn" onclick="LP.endTraining()">End</button>
+    </div>
+    <div id="drillHost"></div>
+  </div>
+
+  <div class="foot">
+    L PROTOCOL &#183; train daily &#183; <a onclick="LP.resetLocal()">reset local data</a><br>
+    Observation &#183; Deduction &#183; Inconsistency &#183; Bayesian &#183; Behavioral &#183; Memory
+  </div>
+</div>
+
+<script src="config.js"></script>
+<script async src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" crossorigin="anonymous"></script>
+<script>
+"use strict";
+const LP = { client:null, user:null, data:{results:[],sessions:[]}, busy:false };
+const CFG = window.NF_CONFIG || {};
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const todayStr = () => new Date().toISOString().slice(0,10);
+const clamp = (v,a,b) => Math.max(a,Math.min(b,v));
+const rand = n => Math.floor(Math.random()*n);
+const pick = a => a[rand(a.length)];
+function shuffle(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){const j=rand(i+1);[a[i],a[j]]=[a[j],a[i]];} return a; }
+
+/* ---------- categories ---------- */
+// Monochrome line icons (inherit currentColor) — one per faculty, sized via CSS.
+function svgIcon(body){
+  return '<svg class="cic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" '+
+    'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+body+'</svg>';
+}
+const ICON = {
+  inconsistency: svgIcon('<path d="M10.3 4 1.8 18.4A2 2 0 0 0 3.5 21.4h17a2 2 0 0 0 1.7-3L13.7 4a2 2 0 0 0-3.4 0z"/><line x1="12" y1="9.5" x2="12" y2="14"/><circle cx="12" cy="17.3" r="1" fill="currentColor" stroke="none"/>'),
+  deduction:     svgIcon('<circle cx="10.5" cy="10.5" r="6.5"/><line x1="15.4" y1="15.4" x2="21" y2="21"/>'),
+  bayes:         svgIcon('<line x1="5" y1="21" x2="5" y2="13"/><line x1="12" y1="21" x2="12" y2="6"/><line x1="19" y1="21" x2="19" y2="10"/>'),
+  observation:   svgIcon('<path d="M1.6 12S5.2 5.5 12 5.5 22.4 12 22.4 12 18.8 18.5 12 18.5 1.6 12 1.6 12z"/><circle cx="12" cy="12" r="3"/>'),
+  coldread:      svgIcon('<circle cx="12" cy="8" r="3.6"/><path d="M5 20c0-3.7 3.1-5.8 7-5.8s7 2.1 7 5.8"/>'),
+  palace:        svgIcon('<path d="M3.5 8.5 12 4l8.5 4.5"/><line x1="6" y1="9.8" x2="6" y2="18"/><line x1="12" y1="9.8" x2="12" y2="18"/><line x1="18" y1="9.8" x2="18" y2="18"/><line x1="4" y1="18.5" x2="20" y2="18.5"/>')
+};
+const CATS = [
+  {key:'inconsistency', label:'Spot the Inconsistency', icon:ICON.inconsistency},
+  {key:'deduction',     label:'Deduction & Logic',      icon:ICON.deduction},
+  {key:'bayes',         label:'Bayesian Update',        icon:ICON.bayes},
+  {key:'observation',   label:'Observation Recall',     icon:ICON.observation},
+  {key:'coldread',      label:'Behavioral Inference',   icon:ICON.coldread},
+  {key:'palace',        label:'Memory Palace',          icon:ICON.palace},
+];
+const CAT = Object.fromEntries(CATS.map(c=>[c.key,c]));
+
+/* =================================================================
+   CONFIG / AUTH  (shares NeuroForge's Supabase session via storageKey)
+   ================================================================= */
+function cloudConfigured(){
+  return !!(CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY && !/YOUR_/.test(CFG.SUPABASE_URL));
+}
+function cloudReady(){ return !!(LP.client && LP.user); }
+
+function waitSupabase(ms){
+  return new Promise(res=>{
+    if(typeof supabase!=='undefined') return res(true);
+    const t0=Date.now(), iv=setInterval(()=>{
+      if(typeof supabase!=='undefined'){clearInterval(iv);res(true);}
+      else if(Date.now()-t0>ms){clearInterval(iv);res(false);}
+    },120);
+  });
+}
+
+async function initAuth(){
+  if(!cloudConfigured()){
+    showBanner('Running in local mode — progress is saved on this device only. Connect config.js for cross-device sync.');
+    return;
+  }
+  const ok = await waitSupabase(7000);
+  if(!ok){ showBanner('Could not load the cloud library — using local mode for this visit.'); return; }
+  try{
+    LP.client = supabase.createClient(CFG.SUPABASE_URL, CFG.SUPABASE_ANON_KEY, {
+      auth:{ persistSession:true, autoRefreshToken:true, detectSessionInUrl:true, storageKey:'nf-auth' }
+    });
+    const { data } = await LP.client.auth.getSession();
+    LP.user = (data && data.session && data.session.user) || null;
+    LP.client.auth.onAuthStateChange((_e, sess)=>{
+      const was = LP.user && LP.user.id;
+      LP.user = (sess && sess.user) || null;
+      if((LP.user&&LP.user.id) !== was){ refreshAll(); }
+      else renderAuth();
+    });
+  }catch(e){ showBanner('Cloud init failed — using local mode.'); }
+}
+
+async function signIn(){
+  if(!LP.client){ showBanner('Cloud not configured.'); return; }
+  try{
+    await LP.client.auth.signInWithOAuth({
+      provider:'discord',
+      options:{ redirectTo: location.origin + location.pathname }
+    });
+  }catch(e){ showBanner('Login failed: '+(e.message||e)); }
+}
+async function signOut(){ if(LP.client){ await LP.client.auth.signOut(); LP.user=null; refreshAll(); } }
+
+function userName(){
+  const u=LP.user; if(!u) return '';
+  const m=u.user_metadata||{};
+  return m.preferred_username || m.full_name || m.name || (u.email?u.email.split('@')[0]:'detective');
+}
+function renderAuth(){
+  const who=$('who'), act=$('authActions');
+  if(cloudReady()){
+    who.innerHTML = 'Signed in as <b>'+esc(userName())+'</b> · synced';
+    act.innerHTML = '<button class="btn ghost" onclick="LP.signOut()">Log out</button>';
+  } else if(cloudConfigured()){
+    who.innerHTML = 'Not signed in · <span style="color:var(--faint)">progress saved locally</span>';
+    act.innerHTML = '<button class="btn primary" onclick="LP.signIn()">Sign in with Discord</button>';
+  } else {
+    who.innerHTML = 'Local mode';
+    act.innerHTML = '';
+  }
+}
+function showBanner(msg){ const b=$('banner'); b.textContent=msg; b.classList.add('show'); }
+
+/* =================================================================
+   STORAGE  (cloud when signed in, else localStorage)
+   ================================================================= */
+const LKEY='lp-data-v1';
+function loadLocal(){
+  try{ const d=JSON.parse(localStorage.getItem(LKEY)); if(d&&d.results) return d; }catch(e){}
+  return {results:[],sessions:[]};
+}
+function saveLocal(d){ try{ localStorage.setItem(LKEY,JSON.stringify(d)); }catch(e){} }
+
+async function loadData(){
+  if(cloudReady()){
+    try{
+      const uid=LP.user.id;
+      const [r,s] = await Promise.all([
+        LP.client.from('lp_drill_results').select('category,difficulty,correct,time_taken_ms,day,created_at').eq('user_id',uid).order('created_at',{ascending:true}).limit(2000),
+        LP.client.from('lp_daily_sessions').select('day,drills_completed,correct_count,score').eq('user_id',uid).order('day',{ascending:true}).limit(500)
+      ]);
+      if(r.error||s.error) throw (r.error||s.error);
+      return { results:r.data||[], sessions:s.data||[] };
+    }catch(e){ showBanner('Could not load cloud data ('+(e.message||e)+') — showing local copy.'); return loadLocal(); }
+  }
+  return loadLocal();
+}
+
+async function saveSession(results, score, correctCount){
+  const day=todayStr();
+  if(cloudReady()){
+    const uid=LP.user.id;
+    try{
+      const rows=results.map(r=>({user_id:uid,day,category:r.category,difficulty:r.difficulty,correct:r.correct,time_taken_ms:r.time_taken_ms}));
+      const ins=await LP.client.from('lp_drill_results').insert(rows);
+      if(ins.error) throw ins.error;
+      // upsert keeps one session row per day; keep the best score
+      const ex=await LP.client.from('lp_daily_sessions').select('score,drills_completed,correct_count').eq('user_id',uid).eq('day',day).maybeSingle();
+      const prev=ex.data||{score:0,drills_completed:0,correct_count:0};
+      const up=await LP.client.from('lp_daily_sessions').upsert({
+        user_id:uid, day,
+        drills_completed:(prev.drills_completed||0)+results.length,
+        correct_count:(prev.correct_count||0)+correctCount,
+        score:(prev.score||0)+score
+      },{onConflict:'user_id,day'});
+      if(up.error) throw up.error;
+      return;
+    }catch(e){ showBanner('Cloud save failed ('+(e.message||e)+') — saved locally instead.'); }
+  }
+  // local fallback / local mode
+  const d=loadLocal();
+  results.forEach(r=>d.results.push({category:r.category,difficulty:r.difficulty,correct:r.correct,time_taken_ms:r.time_taken_ms,day,created_at:new Date().toISOString()}));
+  const ex=d.sessions.find(s=>s.day===day);
+  if(ex){ ex.drills_completed+=results.length; ex.correct_count+=correctCount; ex.score+=score; }
+  else d.sessions.push({day,drills_completed:results.length,correct_count:correctCount,score});
+  saveLocal(d);
+}
+
+function resetLocal(){
+  if(!confirm('Erase locally-stored L Protocol progress on this device? (Cloud data is untouched.)')) return;
+  localStorage.removeItem(LKEY); refreshAll();
+}
+
+/* =================================================================
+   STATS + DIFFICULTY
+   ================================================================= */
+function computeStats(d){
+  const per={}; CATS.forEach(c=>per[c.key]={correct:0,total:0});
+  d.results.forEach(r=>{ if(per[r.category]){ per[r.category].total++; if(r.correct) per[r.category].correct++; } });
+  Object.values(per).forEach(p=> p.acc = p.total? p.correct/p.total : null);
+
+  // overall accuracy
+  let c=0,t=0; d.results.forEach(r=>{t++; if(r.correct)c++;});
+  const overall = t? c/t : null;
+
+  // streak from session days
+  const days=new Set(d.sessions.map(s=>s.day));
+  let streak=0; const probe=new Date();
+  // allow today OR yesterday to start the streak (so a missed "today" before training doesn't read 0)
+  if(!days.has(fmt(probe))) probe.setDate(probe.getDate()-1);
+  while(days.has(fmt(probe))){ streak++; probe.setDate(probe.getDate()-1); }
+  // longest streak
+  const sorted=[...days].sort();
+  let longest=0,run=0,prev=null;
+  sorted.forEach(ds=>{ if(prev && dayDiff(prev,ds)===1) run++; else run=1; longest=Math.max(longest,run); prev=ds; });
+
+  // weakest category (needs a few samples)
+  let weakest=null,wv=2;
+  CATS.forEach(c2=>{ const p=per[c2.key]; if(p.total>=3 && p.acc<wv){wv=p.acc;weakest=c2.key;} });
+
+  return { per, overall, streak, longest, totalSessions:d.sessions.length, weakest, sessions:d.sessions };
+}
+function fmt(dt){ return dt.toISOString().slice(0,10); }
+function dayDiff(a,b){ return Math.round((Date.parse(b)-Date.parse(a))/86400000); }
+
+// 1..5 difficulty from rolling accuracy of a category. `per` is a {key:{correct,total,acc}} map.
+function difficultyFor(catKey, per){
+  const p=per[catKey];
+  if(!p||p.total<3) return 2;
+  const a=p.acc;
+  if(a<0.45) return 1;
+  if(a<0.60) return 2;
+  if(a<0.72) return 3;
+  if(a<0.85) return 4;
+  return 5;
+}
+
+/* =================================================================
+   DASHBOARD
+   ================================================================= */
+function refreshAll(){ renderAuth(); renderDashboard(); }
+
+async function renderDashboard(){
+  LP.data = await loadData();
+  const st = computeStats(LP.data);
+  $('mStreak').textContent = st.streak;
+  $('mSessions').textContent = st.totalSessions;
+  $('mAcc').innerHTML = st.overall==null ? '--<small>%</small>' : Math.round(st.overall*100)+'<small>%</small>';
+
+  // category bars
+  const host=$('cats'); host.innerHTML='';
+  CATS.forEach(c=>{
+    const p=st.per[c.key];
+    const pct = p.acc==null? 0 : Math.round(p.acc*100);
+    const weak = st.weakest===c.key;
+    const row=document.createElement('div');
+    row.className='catrow'+(weak?' weak':'');
+    row.innerHTML =
+      '<div class="ic">'+c.icon+'</div>'+
+      '<div class="nm">'+esc(c.label)+(weak?'<span class="tag">FOCUS</span>':'')+'</div>'+
+      '<div class="bar"><div class="fill" style="width:'+(p.acc==null?0:pct)+'%"></div></div>'+
+      '<div class="pct">'+(p.acc==null?'—':pct+'% ('+p.total+')')+'</div>';
+    host.appendChild(row);
+  });
+
+  drawChart(st.sessions);
+
+  // today note + button label
+  const done = st.sessions.some(s=>s.day===todayStr());
+  $('todayNote').textContent = done
+    ? 'You’ve trained today — streak secured. Train again any time.'
+    : (st.totalSessions? 'Keep the streak alive.' : 'Six drills. ~5 minutes. Begin when ready.');
+  $('startBtn').textContent = done ? 'Train Again' : 'Start Today’s Session';
+}
+
+function drawChart(sessions){
+  const cv=$('chart'); const ctx=cv.getContext('2d');
+  const W=cv.width, H=cv.height; ctx.clearRect(0,0,W,H);
+  const data=sessions.slice(-14).map(s=>({day:s.day, acc: s.drills_completed? s.correct_count/s.drills_completed : 0}));
+  if(data.length<2){
+    ctx.fillStyle='#4a4a56'; ctx.font='13px JetBrains Mono, monospace'; ctx.textAlign='center';
+    ctx.fillText(data.length? 'Train a few more days to chart progress' : 'No sessions yet', W/2, H/2);
+    return;
+  }
+  const padL=34,padR=12,padT=14,padB=22, gw=W-padL-padR, gh=H-padT-padB;
+  // gridlines 0/50/100
+  ctx.strokeStyle='#23232b'; ctx.fillStyle='#4a4a56'; ctx.font='10px JetBrains Mono, monospace'; ctx.textAlign='right';
+  [0,0.5,1].forEach(v=>{ const y=padT+gh*(1-v); ctx.beginPath();ctx.moveTo(padL,y);ctx.lineTo(W-padR,y);ctx.stroke(); ctx.fillText(Math.round(v*100)+'%',padL-6,y+3); });
+  const X=i=>padL+gw*(data.length===1?0.5:i/(data.length-1));
+  const Y=a=>padT+gh*(1-a);
+  // area
+  ctx.beginPath(); ctx.moveTo(X(0),Y(data[0].acc));
+  data.forEach((p,i)=>ctx.lineTo(X(i),Y(p.acc)));
+  ctx.lineTo(X(data.length-1),padT+gh); ctx.lineTo(X(0),padT+gh); ctx.closePath();
+  ctx.fillStyle='rgba(90,176,255,0.10)'; ctx.fill();
+  // line
+  ctx.beginPath(); ctx.moveTo(X(0),Y(data[0].acc));
+  data.forEach((p,i)=>ctx.lineTo(X(i),Y(p.acc)));
+  ctx.strokeStyle='#5ab0ff'; ctx.lineWidth=2; ctx.stroke();
+  // points
+  data.forEach((p,i)=>{ ctx.beginPath(); ctx.arc(X(i),Y(p.acc),3,0,7); ctx.fillStyle='#e9e9ef'; ctx.fill(); });
+}
+
+/* =================================================================
+   SESSION RUNNER
+   ================================================================= */
+// training selection state (set from the dashboard chips)
+LP.trainDur = 10;     // minutes; 0 = unlimited
+LP.trainFocus = 'all';
+function pickDur(el,min){ LP.trainDur=min; markSel(el); }
+function pickFocus(el,key){ LP.trainFocus=key; markSel(el); }
+function markSel(el){ Array.from(el.parentNode.children).forEach(c=>c.classList.remove('sel')); el.classList.add('sel'); }
+
+function drillPoints(r){ return 10 + (r.difficulty-1)*4 + (r.fast?5:0); }
+function fmtClock(ms){
+  const s=Math.floor(ms/1000), h=Math.floor(s/3600), m=Math.floor((s%3600)/60), ss=s%60;
+  const p=n=>String(n).padStart(2,'0');
+  return h? h+':'+p(m)+':'+p(ss) : p(m)+':'+p(ss);
+}
+
+// flush a batch to storage as it accumulates, so long sessions persist even if interrupted
+async function flushBatch(batch){
+  if(!batch.length) return;
+  let s=0,c=0; batch.forEach(r=>{ if(r.correct){ c++; s+=drillPoints(r); } });
+  await saveSession(batch, s, c);
+}
+
+// pick the next training category: focus mode, else weighted toward weaker faculties (no immediate repeat)
+function nextCategory(focus, live, lastCat){
+  if(focus && focus!=='all') return focus;
+  const w=CATS.map(c=>{
+    const p=live[c.key]; const acc=(p.acc==null?0.5:p.acc);
+    let x=(1-acc)+0.2; if(c.key===lastCat) x*=0.15; return {key:c.key,x};
+  });
+  let r=Math.random()*w.reduce((a,b)=>a+b.x,0);
+  for(const e of w){ r-=e.x; if(r<=0) return e.key; }
+  return w[w.length-1].key;
+}
+
+function startSession(){ return runEngine({mode:'daily', limit:6, focus:'all'}); }
+function startTraining(){ return runEngine({mode:'training', durationMs: LP.trainDur? LP.trainDur*60000 : null, focus: LP.trainFocus||'all'}); }
+function endTraining(){ LP.stop=true; if(LP._abort) LP._abort(); }
+
+// unified runner for the daily session (fixed 6) and free training (timed / unlimited)
+async function runEngine(opts){
+  if(LP.busy) return; LP.busy=true; LP.stop=false;
+  const training = opts.mode==='training';
+  const base = computeStats(LP.data).per;
+  const live = {}; CATS.forEach(c=>{ const p=base[c.key]; live[c.key]={correct:p.correct,total:p.total,acc:p.acc}; });
+
+  $('dash').style.display='none'; $('stage').classList.add('on');
+  $('progBar').style.display = training? 'none':'flex';
+  $('hud').style.display     = training? 'flex':'none';
+  document.scrollingElement.scrollTop=0;
+
+  const order = training? null : shuffle(CATS.map(c=>c.key));
+  const startedAt = Date.now();
+  const results=[]; let buffer=[];
+  let score=0, correctCount=0, total=0, run=0, bestRun=0, lastCat=null, i=0;
+
+  function updateHUD(){
+    if(!training) return;
+    $('hTime').textContent   = opts.durationMs ? fmtClock(Math.max(0,opts.durationMs-(Date.now()-startedAt))) : fmtClock(Date.now()-startedAt);
+    $('hDone').textContent   = total;
+    $('hAcc').textContent    = (total? Math.round(correctCount/total*100):0)+'%';
+    $('hStreak').textContent = run;
+  }
+  let timer=null;
+  if(training){
+    timer=setInterval(()=>{
+      updateHUD();
+      if(opts.durationMs && Date.now()-startedAt>=opts.durationMs){ LP.stop=true; }
+    },1000);
+    updateHUD();
+  }
+
+  while(true){
+    if(LP.stop) break;
+    if(opts.limit && total>=opts.limit) break;
+    if(opts.durationMs && Date.now()-startedAt>=opts.durationMs) break;
+
+    const cat = training ? nextCategory(opts.focus, live, lastCat) : order[i];
+    lastCat=cat; i++;
+    if(!training) setProgress(total, opts.limit, score);
+
+    const res = await runDrill(generate(cat, difficultyFor(cat, live)), cat);
+    if(res.aborted) break;
+
+    total++;
+    const L=live[cat]; L.total++; if(res.correct) L.correct++; L.acc=L.correct/L.total;
+    if(res.correct){ correctCount++; run++; bestRun=Math.max(bestRun,run); score+=drillPoints(res); }
+    else run=0;
+    results.push(res); buffer.push(res);
+    updateHUD();
+
+    if(buffer.length>=5){ const b=buffer; buffer=[]; await flushBatch(b); }
+  }
+
+  if(timer) clearInterval(timer);
+  if(buffer.length){ const b=buffer; buffer=[]; await flushBatch(b); }
+  LP.data = await loadData();
+  if(training) showTrainingSummary(results, score, correctCount, bestRun, Date.now()-startedAt);
+  else { setProgress(opts.limit, opts.limit, score); showSummary(results, score, correctCount); }
+  LP.busy=false; LP.stop=false;
+}
+
+function setProgress(i,total,score){
+  $('progLabel').textContent='DRILL '+Math.min(i+1,total)+' / '+total;
+  $('progFill').style.width=(i/total*100)+'%';
+  $('progScore').textContent=score;
+}
+
+// renders a drill, resolves with {category,difficulty,correct,time_taken_ms,fast}
+function runDrill(drill, key){
+  return new Promise(resolve=>{
+    const host=$('drillHost'); const started=Date.now();
+    const tok={live:true};
+    LP._abort=()=>{ if(!tok.live) return; tok.live=false; LP._abort=null; resolve({aborted:true}); };
+    const finish=(correct)=>{
+      if(!tok.live) return; tok.live=false; LP._abort=null;
+      const dt=Date.now()-started;
+      resolve({category:key, difficulty:drill.difficulty, correct:!!correct, time_taken_ms:dt, fast: dt<12000});
+    };
+    const head =
+      '<div class="kicker">'+CAT[key].icon+' '+esc(CAT[key].label)+
+      '<span class="lv">LV '+drill.difficulty+'</span></div>';
+    if(drill.type==='mcq')      renderMCQ(host,head,drill,finish);
+    else if(drill.type==='slider') renderSlider(host,head,drill,finish);
+    else if(drill.type==='observe')renderObserve(host,head,drill,finish,tok);
+    else if(drill.type==='memory') renderMemory(host,head,drill,finish,tok);
+  });
+}
+
+function feedbackBlock(ok, html){
+  return '<div class="fb '+(ok?'ok':'no')+' show"><div class="verdict">'+(ok?'CORRECT':'NOT QUITE')+
+    '</div><div class="why">'+html+'</div><div class="fb-actions">'+
+    '<button class="btn primary" id="nextBtn">Continue</button></div></div>';
+}
+
+/* ---- MCQ (inconsistency, deduction, coldread, + observe phase 2) ---- */
+function renderMCQ(host, head, d, finish){
+  host.innerHTML = head +
+    '<div class="drill">'+
+    (d.scenario? '<div class="scenario">'+esc(d.scenario)+'</div>':'')+
+    '<div class="qtext">'+esc(d.question)+'</div>'+
+    '<div class="opts" id="opts"></div><div id="fbslot"></div></div>';
+  const opts=$('opts');
+  d.options.forEach((o,i)=>{
+    const b=document.createElement('button'); b.className='opt'; b.innerHTML=esc(o);
+    b.onclick=()=>{
+      const correct=i===d.correct;
+      Array.from(opts.children).forEach((c,j)=>{ c.disabled=true;
+        if(j===d.correct) c.classList.add('correct');
+        if(j===i&&!correct) c.classList.add('wrong');
+      });
+      b.insertAdjacentHTML('beforeend','<span class="mk">'+(correct?'OK':'X')+'</span>');
+      $('fbslot').innerHTML=feedbackBlock(correct, d.explanation);
+      $('nextBtn').onclick=()=>finish(correct);
+    };
+    opts.appendChild(b);
+  });
+}
+
+/* ---- SLIDER (bayes) ---- */
+function renderSlider(host, head, d, finish){
+  host.innerHTML = head +
+    '<div class="drill">'+
+    '<div class="scenario">'+esc(d.scenario)+'</div>'+
+    '<div class="qtext">'+esc(d.question)+'</div>'+
+    '<div class="slider-val"><span id="sv">50</span>%</div>'+
+    '<input type="range" min="0" max="100" value="50" id="slider">'+
+    '<div class="scale-ends"><span>0% · impossible</span><span>100% · certain</span></div>'+
+    '<button class="btn primary big" id="lockBtn" style="margin-top:16px">Lock in estimate</button>'+
+    '<div id="fbslot"></div></div>';
+  const sl=$('slider'); sl.oninput=()=>$('sv').textContent=sl.value;
+  $('lockBtn').onclick=()=>{
+    const guess=+sl.value, correct=Math.abs(guess-d.answer)<=d.tolerance;
+    sl.disabled=true; $('lockBtn').disabled=true;
+    $('fbslot').innerHTML=feedbackBlock(correct,
+      'You said <b>'+guess+'%</b>. The Bayesian answer is <b>'+d.answer+'%</b> (within ±'+d.tolerance+' counts).<br><br>'+d.explanation);
+    $('nextBtn').onclick=()=>finish(correct);
+  };
+}
+
+/* ---- OBSERVE: timed reveal then MCQ ---- */
+function renderObserve(host, head, d, finish, tok){
+  const cells=d.grid.map(g=> '<div class="ocell">'+(g?g.html:'')+'</div>').join('');
+  host.innerHTML = head +
+    '<div class="drill"><div class="reveal-wrap">'+
+    '<div class="qtext">Memorise the scene</div>'+
+    '<div class="timer"><div class="tf" id="tf"></div></div>'+
+    '<div class="ogrid" id="og" style="grid-template-columns:repeat('+d.cols+',1fr)">'+cells+'</div>'+
+    '</div></div>';
+  const tf=$('tf'); tf.style.transition='width '+d.viewMs+'ms linear';
+  requestAnimationFrame(()=>{ tf.style.width='0%'; });
+  setTimeout(()=>{ if(!tok||tok.live) renderMCQ(host, head, {type:'mcq',scenario:'',question:d.question,options:d.options,correct:d.correct,explanation:d.explanation,difficulty:d.difficulty}, finish); }, d.viewMs);
+}
+
+/* ---- MEMORY PALACE: show ordered items, recall order ---- */
+function renderMemory(host, head, d, finish, tok){
+  const items=d.items;
+  const list=items.map((it,i)=>'<div class="memitem"><span class="n">'+(i+1)+'</span>'+it+'</div>').join('');
+  host.innerHTML = head +
+    '<div class="drill"><div class="reveal-wrap">'+
+    '<div class="qtext">Memorise this route — in order</div>'+
+    '<div class="timer"><div class="tf" id="tf"></div></div>'+
+    '<div class="memlist">'+list+'</div></div></div>';
+  const tf=$('tf'); tf.style.transition='width '+d.viewMs+'ms linear';
+  requestAnimationFrame(()=>{ tf.style.width='0%'; });
+  setTimeout(()=>{ if(!tok||tok.live) recallPhase(host,head,d,finish); }, d.viewMs);
+}
+function recallPhase(host, head, d, finish){
+  const order=[];
+  const tiles=shuffle(d.items.map((it,i)=>({it,i})));
+  host.innerHTML = head +
+    '<div class="drill">'+
+    '<div class="qtext">Reconstruct the route in the original order</div>'+
+    '<div class="picked-order" id="po"></div>'+
+    '<div class="tiles" id="tiles"></div>'+
+    '<div id="fbslot"></div></div>';
+  const th=$('tiles');
+  tiles.forEach(t=>{
+    const b=document.createElement('button'); b.className='tile'; b.textContent=t.it;
+    b.onclick=()=>{
+      b.disabled=true; b.classList.add('picked'); order.push(t.i);
+      $('po').insertAdjacentHTML('beforeend','<span class="p">'+t.it+'</span>');
+      if(order.length===d.items.length){
+        const correct=order.every((v,k)=>v===k);
+        const truth=d.items.map((it,i)=>(i+1)+'. '+it).join('   ');
+        $('fbslot').innerHTML=feedbackBlock(correct,
+          (correct?'Perfect recall of the sequence.':'The correct order was:')+'<br><b>'+esc(truth)+'</b>');
+        $('nextBtn').onclick=()=>finish(correct);
+      }
+    };
+    th.appendChild(b);
+  });
+}
+
+/* =================================================================
+   SUMMARY
+   ================================================================= */
+function showSummary(results, score, correctCount){
+  const st=computeStats(LP.data);
+  const lines=results.map(r=>
+    '<div class="sum-line"><span>'+CAT[r.category].icon+' '+esc(CAT[r.category].label)+'</span>'+
+    '<span class="'+(r.correct?'r':'w')+'">'+(r.correct?'correct':'missed')+'</span></div>').join('');
+  $('drillHost').innerHTML =
+    '<div class="drill">'+
+    '<div class="kicker">SESSION COMPLETE</div>'+
+    '<div class="sum-score">'+correctCount+'<small>/'+results.length+' correct</small></div>'+
+    '<div style="text-align:center;color:var(--dim);font-size:0.78rem;letter-spacing:1px;margin-bottom:6px">+'+score+' points</div>'+
+    '<div class="streak-up">'+st.streak+'-DAY STREAK</div>'+
+    lines+
+    '<button class="btn primary big" style="margin-top:20px" onclick="LP.toDash()">Back to Dashboard</button>'+
+    '</div>';
+  $('progFill').style.width='100%';
+}
+function showTrainingSummary(results, score, correctCount, bestRun, durMs){
+  $('hud').style.display='none';
+  const st=computeStats(LP.data);
+  const per={}; CATS.forEach(c=>per[c.key]={c:0,t:0});
+  results.forEach(r=>{ per[r.category].t++; if(r.correct) per[r.category].c++; });
+  const lines=CATS.filter(c=>per[c.key].t>0).map(c=>{
+    const p=per[c.key], pct=Math.round(p.c/p.t*100);
+    return '<div class="sum-line"><span>'+c.icon+' '+esc(c.label)+'</span>'+
+      '<span class="'+(pct>=60?'r':'w')+'">'+p.c+'/'+p.t+' · '+pct+'%</span></div>';
+  }).join('');
+  const acc = results.length? Math.round(correctCount/results.length*100):0;
+  $('drillHost').innerHTML =
+    '<div class="drill">'+
+    '<div class="kicker">TRAINING COMPLETE</div>'+
+    '<div class="sum-score">'+acc+'<small>% accuracy</small></div>'+
+    '<div style="text-align:center;color:var(--dim);font-size:0.76rem;letter-spacing:1px;margin-bottom:6px">'+
+      results.length+' drills · '+fmtClock(durMs)+' · +'+score+' pts · best run '+bestRun+'</div>'+
+    '<div class="streak-up">'+st.streak+'-DAY STREAK</div>'+
+    (lines||'<div style="text-align:center;color:var(--faint);font-size:0.75rem;padding:10px">No drills completed.</div>')+
+    '<div style="display:flex;gap:10px;margin-top:20px">'+
+      '<button class="btn primary" style="flex:1;padding:14px" onclick="LP.toDash()">Dashboard</button>'+
+      '<button class="btn" style="flex:1;padding:14px" onclick="LP.startTraining()">Train Again</button>'+
+    '</div></div>';
+}
+function toDash(){ $('stage').classList.remove('on'); $('dash').style.display='block'; renderDashboard(); document.scrollingElement.scrollTop=0; }
+
+/* =================================================================
+   DRILL CONTENT  (data-driven; hand banks + generators)
+   ================================================================= */
+function generate(key, diff){
+  const g = GEN[key];
+  const d = g(diff);
+  d.difficulty = diff;
+  return d;
+}
+
+// helper: turn a bank entry into an mcq with shuffled options
+function asMCQ(entry){
+  const opts=entry.options.map((text,i)=>({text,correct:i===entry.correct}));
+  const sh=shuffle(opts);
+  return { type:'mcq', scenario:entry.scenario||'', question:entry.question,
+    options:sh.map(o=>o.text), correct:sh.findIndex(o=>o.correct), explanation:entry.explanation };
+}
+
+const GEN = {
+  /* ---------- 1. SPOT THE INCONSISTENCY (flagship) ---------- */
+  inconsistency(diff){
+    // mix a hand-written bank with a generated time/number contradiction
+    if(diff>=3 && Math.random()<0.45) return asMCQ(genTimeContradiction());
+    return asMCQ(pick(BANK.inconsistency));
+  },
+  /* ---------- 2. DEDUCTION & LOGIC ---------- */
+  deduction(diff){
+    if(Math.random()<0.35) return asMCQ(genSyllogism());
+    return asMCQ(pick(BANK.deduction));
+  },
+  /* ---------- 3. BAYESIAN UPDATE (fully generated) ---------- */
+  bayes(diff){ return genBayes(diff); },
+  /* ---------- 4. OBSERVATION RECALL (generated) ---------- */
+  observation(diff){ return genObserve(diff); },
+  /* ---------- 5. BEHAVIORAL INFERENCE ---------- */
+  coldread(diff){ return asMCQ(pick(BANK.coldread)); },
+  /* ---------- 6. MEMORY PALACE (generated) ---------- */
+  palace(diff){ return genPalace(diff); },
+};
+
+/* ---- generated: time/number contradiction ---- */
+function genTimeContradiction(){
+  const variant=rand(2);
+  if(variant===0){
+    const dep=8+rand(10), depM=pick([0,10,15,20,30,40,45]);
+    const dur=15+rand(40);
+    const start=dep*60+depM, end=start+dur;
+    const bad=start-(5+rand(15)); // arrives before it left
+    const t=m=>String(Math.floor(m/60)%24).padStart(2,'0')+':'+String(m%60).padStart(2,'0');
+    return {
+      question:'A witness gives this timeline. Which statement is impossible given the others?',
+      options:[
+        'The coach departed Marlow at '+t(start)+'.',
+        'The driver logged the journey as '+dur+' minutes, with no stops.',
+        'CCTV timestamps the coach arriving at Dale at '+t(bad)+'.',
+        'The fuel receipt was printed at the depot before departure.'
+      ],
+      correct:2,
+      explanation:'Leaving at <b>'+t(start)+'</b> on a <b>'+dur+'-minute</b> trip means arrival no earlier than <b>'+t(end)+'</b>. An arrival stamp of '+t(bad)+' is <b>before</b> the coach even left — the timeline can’t hold.'
+    };
+  } else {
+    const bills=pick([10,20,50]); const count=2+rand(6);
+    const total=bills*count; const wrong=total+bills*(1+rand(2));
+    return {
+      question:'The ransom accounting was read into evidence. Which line is inconsistent?',
+      options:[
+        'The note demanded payment in £'+bills+' notes only.',
+        'Exactly '+count+' notes were left in the locker.',
+        'The drop therefore contained £'+wrong+'.',
+        'The locker was rented under a false name on Tuesday.'
+      ],
+      correct:2,
+      explanation:'<b>'+count+'</b> notes of <b>£'+bills+'</b> is £'+total+', not £'+wrong+'. The stated total contradicts the count and denomination.'
+    };
+  }
+}
+
+/* ---- generated: syllogism validity ---- */
+function genSyllogism(){
+  const A=pick(['cats','poets','engineers','sailors','foxes','jurors']);
+  const B=pick(['mammals','dreamers','graduates','swimmers','hunters','citizens']);
+  const C=pick(['predators','idealists','employed','athletes','nocturnal','registered']);
+  const forms=[
+    {valid:true,  p:['All '+A+' are '+B+'.','No '+B+' are '+C+'.'], c:'No '+A+' are '+C+'.',
+      why:'Valid. If every '+A+' is a '+B+', and no '+B+' is a '+C+', then no '+A+' can be a '+C+'. The middle term '+B+' is properly distributed.'},
+    {valid:false, p:['All '+A+' are '+B+'.','Some '+B+' are '+C+'.'], c:'Some '+A+' are '+C+'.',
+      why:'Invalid — the classic <b>undistributed middle</b>. The '+C+'-ish '+B+' need not overlap with the '+A+' at all.'},
+    {valid:true,  p:['All '+A+' are '+B+'.','All '+B+' are '+C+'.'], c:'All '+A+' are '+C+'.',
+      why:'Valid (Barbara). The chain '+A+'→'+B+'→'+C+' carries through.'},
+    {valid:false, p:['Some '+A+' are '+B+'.','Some '+B+' are '+C+'.'], c:'Some '+A+' are '+C+'.',
+      why:'Invalid. Two "some" premises share only '+B+'; the '+A+' and the '+C+' subsets can be entirely separate.'}
+  ];
+  const f=pick(forms);
+  return {
+    scenario:f.p.join('\n')+'\nTherefore: '+f.c,
+    question:'Is this argument logically valid?',
+    options:['Valid','Invalid'],
+    correct:f.valid?0:1,
+    explanation:f.why+' <i>(Validity is about form, not whether the conclusion happens to be true.)</i>'
+  };
+}
+
+/* ---- generated: Bayesian update ---- */
+function genBayes(diff){
+  const T=pick([
+    {who:'people in the city',      evt:'carry a rare genetic marker', subj:'the screening', verb:'flags',   past:'flagged',  thing:'a carrier'},
+    {who:'returned library books',  evt:'are first editions',          subj:'the appraiser', verb:'tags',    past:'tagged',   thing:'a first edition'},
+    {who:'overnight alarms',        evt:'are real break-ins',          subj:'the sensor',    verb:'reports', past:'reported', thing:'a real break-in'},
+    {who:'match-day tickets',       evt:'are forgeries',               subj:'the scanner',   verb:'rejects', past:'rejected', thing:'a forgery'}
+  ]);
+  const base=pick([1,2,3,5])/100;                      // prior P(H)
+  const sens=pick([80,85,90,95])/100;                  // P(positive | H)
+  const fpr =pick([5,8,10,12,15])/100;                 // P(positive | not H)
+  const post=(sens*base)/(sens*base+fpr*(1-base));
+  const answer=Math.round(post*100);
+  const tol=[0,15,12,10,8,6][diff]||10;
+  const N=1000, real=Math.round(base*N), clean=N-real;
+  const tp=Math.round(real*sens), fp=Math.round(clean*fpr);
+  return {
+    type:'slider', answer, tolerance:tol,
+    scenario:'About '+(base*100)+'% of '+T.who+' '+T.evt+'. When one truly is '+T.thing+', '+T.subj+' '+T.verb+' it '+(sens*100)+'% of the time — but '+T.subj+' also '+T.verb+' '+(fpr*100)+'% of those that are not.',
+    question:'One was just '+T.past+'. How likely is it to actually be '+T.thing+'?',
+    explanation:'Picture '+N+' cases: about '+real+' truly are ('+tp+' get '+T.past+') and '+clean+' are not ('+fp+' '+T.past+' by mistake). '+
+      'So P(real | '+T.past+') = '+tp+' / ('+tp+' + '+fp+') ≈ <b>'+answer+'%</b>. '+
+      'The low base rate pulls the answer far below the test’s '+(sens*100)+'% hit-rate — the <b>base-rate fallacy</b>.'
+  };
+}
+
+/* ---- generated: observation recall ---- */
+const OBS_SET=[
+  {id:'rc', label:'red circle',     html:'<i class="sh" style="--c:#e5484d;border-radius:50%"></i>'},
+  {id:'bc', label:'blue circle',    html:'<i class="sh" style="--c:#4493f8;border-radius:50%"></i>'},
+  {id:'gc', label:'green circle',   html:'<i class="sh" style="--c:#3fb950;border-radius:50%"></i>'},
+  {id:'yc', label:'amber circle',   html:'<i class="sh" style="--c:#d29922;border-radius:50%"></i>'},
+  {id:'vs', label:'violet square',  html:'<i class="sh" style="--c:#a371f7"></i>'},
+  {id:'ws', label:'grey square',    html:'<i class="sh" style="--c:#8b949e"></i>'},
+  {id:'rt', label:'red triangle',   html:'<i class="sh tri" style="--c:#e5484d"></i>'},
+  {id:'bd', label:'blue diamond',   html:'<i class="sh dia" style="--c:#4493f8"></i>'}
+];
+const OBS_BY=Object.fromEntries(OBS_SET.map(o=>[o.id,o]));
+function genObserve(diff){
+  const cols=[0,4,4,5,5,6][diff]||5;
+  const rows=[0,2,3,3,4,4][diff]||3;
+  const n=cols*rows;
+  const viewMs=[0,4500,4000,3500,3000,2500][diff]||3500;
+  const fillCount=Math.round(n*(0.5+diff*0.05));
+  const symbols=shuffle(OBS_SET).slice(0, Math.min(4+Math.floor(diff/2), OBS_SET.length));
+  const grid=new Array(n).fill(null);
+  const counts={};
+  const slots=shuffle(Array.from({length:n},(_,i)=>i)).slice(0,fillCount);
+  slots.forEach(s=>{ const sym=pick(symbols); grid[s]=sym; counts[sym.id]=(counts[sym.id]||0)+1; });
+
+  // question: count of a chosen object that appeared
+  const present=Object.keys(counts);
+  if(Math.random()<0.6 && present.length){
+    const targetId=pick(present); const target=OBS_BY[targetId]; const truth=counts[targetId];
+    const set=new Set([truth]); let guard=0;
+    while(set.size<4 && guard++<60){ set.add(clamp(truth+rand(7)-3,0,Math.max(4,n))); }
+    let extra=1; while(set.size<4){ set.add(truth+extra++); }
+    const options=shuffle([...set]).map(String);
+    return {type:'observe',grid,cols,viewMs,
+      question:'How many '+target.label+'s were in the scene?',
+      options, correct:options.indexOf(String(truth)),
+      explanation:'There were <b>'+truth+'</b> '+target.label+'s. Counting by category as the scene loads beats trying to photograph the whole grid.'};
+  } else {
+    // which object did NOT appear
+    const absent=symbols.filter(s=>!counts[s.id]);
+    const missing = absent.length? pick(absent) : pick(OBS_SET.filter(s=>!counts[s.id]));
+    const distract=shuffle(present.map(id=>OBS_BY[id])).slice(0,3);
+    const options=shuffle([missing,...distract]).map(o=>o.label);
+    return {type:'observe',grid,cols,viewMs,
+      question:'Which of these did NOT appear in the scene?',
+      options, correct:options.indexOf(missing.label),
+      explanation:'<b>'+missing.label+'</b> was absent. Noticing what is missing is as much an observation as noticing what is present.'};
+  }
+}
+
+/* ---- generated: memory palace ---- */
+const PALACE_ITEMS=['key','candle','ledger','umbrella','glove','glass','blade','compass','beads','hat','bell','lock','coin','scroll','thread','torch'];
+function genPalace(diff){
+  const n=[0,4,4,5,6,7][diff]||5;
+  const base=[0,5000,4500,4500,4200,4000][diff]||4500;
+  const viewMs=base + n*300;
+  const items=shuffle(PALACE_ITEMS).slice(0,n);
+  return {type:'memory', items, viewMs:viewMs};
+}
+
+/* =================================================================
+   HAND-WRITTEN CONTENT BANKS
+   ================================================================= */
+const BANK = {
+  inconsistency:[
+    {question:'A guest gives this account of the dinner. Which statement contradicts the others?',
+     options:[
+       'All three guests arrived together at seven and stayed the whole evening.',
+       'I poured each of them a glass from the bottle I opened.',
+       'When the police arrived, only two used wine glasses were on the table.',
+       'No one else entered the house after seven.'],
+     correct:2,
+     explanation:'Three guests, each poured a glass, nobody else present → there should be <b>three</b> used glasses. Only two contradicts the rest of the account.'},
+
+    {question:'The housekeeper’s statement. Which detail can’t be true given the others?',
+     options:[
+       'I last saw the master alive at six in the morning.',
+       'Forensics fixed the time of death at around 2 a.m.',
+       'His tea was still warm when I found him at nine.',
+       'The study door had been locked from the inside.'],
+     correct:2,
+     explanation:'If death was at 2 a.m., tea poured before then would be stone cold by 9 a.m. “Still warm” is incompatible with the established time of death (and with last seeing him at 6 a.m.).'},
+
+    {question:'Which line in this alibi is internally impossible?',
+     options:[
+       'He swore he never left the office after 5 p.m.',
+       'His parking ticket was stamped leaving the garage at 5:15 p.m.',
+       'The garage is in the basement of the same building.',
+       'His secretary went home at 5 p.m. sharp.'],
+     correct:0,
+     explanation:'A garage-exit stamp at 5:15 directly contradicts “never left after 5 p.m.” The physical record beats the claim.'},
+
+    {question:'A painting theft. Which statement is inconsistent with the timeline?',
+     options:[
+       'It was reported stolen at 11:30 that morning.',
+       'A guard saw the thief fleeing the east door at 11:45.',
+       'The gallery’s own camera photographed it on the wall at noon.',
+       'The frame was found discarded in the alley by 1 p.m.'],
+     correct:2,
+     explanation:'If it was gone by 11:30 and the thief fled at 11:45, the painting cannot still be photographed on the wall at noon. The noon photo is the odd one out.'},
+
+    {question:'The will is read. Which figure doesn’t add up?',
+     options:[
+       'She withdrew her entire balance of £1,200 that week.',
+       'She gave £400 to each of her three nephews.',
+       'She kept the remaining £200 for herself.',
+       'The withdrawals were all made at the High Street branch.'],
+     correct:2,
+     explanation:'£400 × 3 = £1,200, which uses the whole balance. There is nothing left to keep, so the “remaining £200” is impossible.'},
+
+    {question:'A break-in. Which claim is in tension with the others?',
+     options:[
+       'The dog barks furiously at every stranger who comes near.',
+       'An intruder crossed the garden and forced the back door at midnight.',
+       'The family slept undisturbed and the dog never made a sound.',
+       'Nothing of value was taken from the house.'],
+     correct:2,
+     explanation:'A dog that barks at <b>every</b> stranger, yet stays silent while a stranger breaks in, points to a contradiction — the intruder was likely <b>not</b> a stranger. The silent dog is the inconsistency (the Silver Blaze tell).'},
+
+    {question:'A shop robbery report. Which statement cannot stand with the rest?',
+     options:[
+       'The robber wore thick leather gloves the entire time.',
+       'He emptied the register and fled in under a minute.',
+       'A clear set of his fingerprints was lifted from the till.',
+       'The CCTV caught him entering at 9:02 p.m.'],
+     correct:2,
+     explanation:'Gloves worn “the entire time” are incompatible with a clear set of his fingerprints on the till. One of those two must be false.'},
+
+    {question:'Which statement contradicts the established facts?',
+     options:[
+       'The lake had been frozen solid for a week.',
+       'Heavy snow fell continuously through the night.',
+       'A single line of muddy footprints led to the cabin door.',
+       'No vehicles could reach the cabin in those conditions.'],
+     correct:2,
+     explanation:'Continuous overnight snow would cover any footprints made earlier; a crisp single trail of <b>muddy</b> prints (mud, not snow) on a frozen, snow-covered approach doesn’t fit — it suggests they were staged or made after the snow stopped.'}
+  ],
+
+  deduction:[
+    {scenario:'Only members may enter the reading room. Everyone who entered today signed the register. Sara’s name is not in the register.',
+     question:'What follows with certainty?',
+     options:[
+       'Sara did not enter the reading room today.',
+       'Sara is not a member.',
+       'Sara entered but forgot to sign.',
+       'Sara is a member who came yesterday.'],
+     correct:0,
+     explanation:'Everyone who entered signed; Sara didn’t sign, so she didn’t enter. We <b>cannot</b> conclude anything about her membership — that’s observation vs. over-reach.'},
+
+    {scenario:'If it had rained, the match would have been cancelled. The match was not cancelled.',
+     question:'Which conclusion is valid?',
+     options:[
+       'It did not rain.',
+       'It rained.',
+       'The match was cancelled after all.',
+       'Nothing can be concluded.'],
+     correct:0,
+     explanation:'Modus tollens: rain → cancelled; not cancelled → not rained. Affirming “it rained” would be the fallacy of denying the antecedent.'},
+
+    {scenario:'Every forger involved in this case signed with blue ink. The note found on the desk was written in black ink.',
+     question:'What can you justifiably conclude?',
+     options:[
+       'The note was not written by a forger in this case.',
+       'The note is genuine.',
+       'A forger wrote it but switched to black ink.',
+       'The note is unrelated to the case.'],
+     correct:0,
+     explanation:'All case-forgers used blue; this note is black, so it wasn’t one of them. “Genuine” over-reaches — a non-case forger or anyone else could have written it.'},
+
+    {scenario:'Three suspects: Ash, Bell and Cole. The thief is the tallest of the three. Ash is taller than Bell. Cole is taller than Ash.',
+     question:'Who is the thief?',
+     options:['Cole','Ash','Bell','Cannot be determined'],
+     correct:0,
+     explanation:'Cole > Ash > Bell, so Cole is tallest — and the thief is the tallest. The ordering is fully determined.'},
+
+    {scenario:'Whoever held a key could open the vault. The vault was opened. Only Dr. Vane and the butler were issued keys.',
+     question:'What follows?',
+     options:[
+       'Dr. Vane or the butler (or both) opened it.',
+       'Dr. Vane opened it.',
+       'The butler opened it.',
+       'Someone with no key opened it.'],
+     correct:0,
+     explanation:'Only two people could open it, and it was opened — so it was one or both of them. Naming a specific one isn’t supported by the evidence given.'},
+
+    {scenario:'Four guests dined together: a doctor, a lawyer, a teacher and an engineer. The culprit is one of them. It was not the doctor and not the lawyer. The teacher’s alibi is confirmed by two officers.',
+     question:'Who is the culprit?',
+     options:['The engineer','The teacher','Either the teacher or engineer','Cannot be determined'],
+     correct:0,
+     explanation:'Eliminate the doctor, the lawyer, and the alibied teacher — only the engineer remains. Elimination to a single survivor is a valid deduction.'},
+
+    {scenario:'No reptiles are warm-blooded. All snakes are reptiles.',
+     question:'Therefore…',
+     options:[
+       'No snakes are warm-blooded.',
+       'Some snakes are warm-blooded.',
+       'All warm-blooded things are snakes.',
+       'Nothing follows.'],
+     correct:0,
+     explanation:'Valid. Snakes ⊆ reptiles, and reptiles are disjoint from warm-blooded things, so snakes are too.'},
+
+    {scenario:'The safe was opened without force. Only someone who knew the combination could open it without force. The combination was known only to the manager and the auditor. The auditor was abroad all week, verified by border records.',
+     question:'What is the strongest supported conclusion?',
+     options:[
+       'The manager opened the safe.',
+       'The auditor opened the safe.',
+       'An outsider guessed the combination.',
+       'The safe was forced after all.'],
+     correct:0,
+     explanation:'No force → someone who knew the code; only two knew it; the auditor is excluded by border records → the manager. Each step is forced by the premises.'}
+  ],
+
+  coldread:[
+    {scenario:'Asked where he was on Friday night, the man answers instantly and in far more detail than you asked for — exact times, street names, even the waiter’s name.',
+     question:'What is the most reasonable inference?',
+     options:[
+       'His account may be rehearsed.',
+       'He simply has an excellent memory.',
+       'He clearly has nothing to hide.',
+       'He was just being helpful.'],
+     correct:0,
+     explanation:'Truthful recall of an ordinary evening is usually patchy and reconstructed. Over-precise, <b>unprompted</b> detail is a hallmark of a story prepared in advance. It’s a flag to probe, not proof of guilt.'},
+
+    {scenario:'When the victim’s name is spoken, her lips press briefly into a thin line before she composes herself and offers warm sympathy.',
+     question:'What does the micro-expression most likely indicate?',
+     options:[
+       'A suppressed negative feeling she is masking.',
+       'Genuine, uncomplicated grief.',
+       'Confusion about who is meant.',
+       'Nothing — lip movements are random.'],
+     correct:0,
+     explanation:'Lip compression is a classic suppression/negative-affect micro-expression. Arriving <b>before</b> the verbal sympathy, it suggests her true reaction differs from the words that follow.'},
+
+    {scenario:'He keeps his replies short and agreeable, but his foot bounces non-stop and his torso is angled toward the door the whole time.',
+     question:'What is the body language signalling?',
+     options:[
+       'A strong urge to end the conversation / anxiety.',
+       'Relaxed confidence.',
+       'Boredom with an easy topic.',
+       'Friendly openness.'],
+     correct:0,
+     explanation:'Ventral orientation toward the exit plus a self-soothing bouncing foot signal a desire to flee. The agreeable words are contradicted by where the body wants to go — trust the leak, not the script.'},
+
+    {scenario:'Accused of lying, she leans in, locks unwavering eye contact, and says firmly, “I would never do such a thing.”',
+     question:'How should you read the intense eye contact?',
+     options:[
+       'It’s an unreliable signal — it can be deliberately staged.',
+       'Strong eye contact proves she is honest.',
+       'It proves she is lying.',
+       'It means she misunderstood the accusation.'],
+     correct:0,
+     explanation:'People who know the myth “liars look away” often <b>over-compensate</b> with forced eye contact. On its own, gaze tells you little — weigh it against everything else rather than treating it as a verdict.'},
+
+    {scenario:'Shown the weapon, the other suspects each glance at it normally. One man’s eyes flick to it, dart away at once, and he edges his chair back an inch.',
+     question:'What stands out about his reaction?',
+     options:[
+       'Avoidance — a specific aversion the others don’t share.',
+       'Ordinary curiosity, like the rest.',
+       'Poor eyesight.',
+       'Nothing distinguishes him.'],
+     correct:0,
+     explanation:'A quick look-away paired with physical distancing is avoidance behaviour. Against the baseline of neutral glances from everyone else, his deviation is the signal worth pursuing.'},
+
+    {scenario:'You ask, “Where were you at ten?” She replies, “Why would I have any reason to be involved in this?”',
+     question:'What does answering a question with a question suggest here?',
+     options:[
+       'Deflection — possibly buying time to construct a reply.',
+       'She didn’t hear the question.',
+       'She has already proven her innocence.',
+       'She is offended and nothing more.'],
+     correct:0,
+     explanation:'Not answering the actual question — and redirecting to the broader accusation — is a deflection pattern. It can buy seconds to compose a response. Note it; don’t over-read a single instance.'},
+
+    {scenario:'He describes himself as “absolutely devastated,” yet recounts finding the body in a flat, even voice, lingering on vivid gory detail without a flicker of distress.',
+     question:'What is the key observation?',
+     options:[
+       'His stated emotion is incongruent with his flat affect.',
+       'He is obviously the killer.',
+       'He is coping admirably.',
+       'Calm people are always honest.'],
+     correct:0,
+     explanation:'The flag is the <b>mismatch</b>: “devastated” words delivered with flat affect and easy dwelling on gore. Incongruence between claimed and displayed emotion is what merits a closer look — not a conclusion by itself.'},
+
+    {scenario:'You deliberately misstate a small detail of his account. He instantly, confidently corrects you on it.',
+     question:'What does the quick correction suggest about that detail?',
+     options:[
+       'He likely has a genuine memory of it.',
+       'He is certainly lying about everything.',
+       'He memorised a script and slipped.',
+       'It tells you nothing at all.'],
+     correct:0,
+     explanation:'Truth-tellers tend to <b>correct</b> errors because they’re recalling real events; someone running a fabricated story more often lets a small error pass to avoid contradicting themselves. A prompt correction is mild evidence the detail is real.'}
+  ]
+};
+
+/* =================================================================
+   EXPOSE + BOOT
+   ================================================================= */
+Object.assign(LP,{ signIn, signOut, startSession, startTraining, endTraining, pickDur, pickFocus, toDash, resetLocal });
+function buildFocusChips(){
+  const row=$('focusRow');
+  let html='<button class="tchip sel" onclick="LP.pickFocus(this,\'all\')">All faculties</button>';
+  CATS.forEach(c=>{
+    html+='<button class="tchip ic-chip" title="'+esc(c.label)+'" aria-label="'+esc(c.label)+
+      '" onclick="LP.pickFocus(this,\''+c.key+'\')">'+c.icon+'</button>';
+  });
+  row.innerHTML=html;
+}
+(async function boot(){
+  buildFocusChips();
+  renderAuth();
+  await initAuth();
+  renderAuth();
+  await renderDashboard();
+})();
+</script>
+</body>
+</html>
