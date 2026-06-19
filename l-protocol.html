@@ -862,21 +862,19 @@ function asMCQ(entry){
 const GEN = {
   /* ---------- 1. SPOT THE INCONSISTENCY (flagship) ---------- */
   inconsistency(diff){
-    // mix a hand-written bank with a generated time/number contradiction
-    if(diff>=3 && Math.random()<0.45) return asMCQ(genTimeContradiction());
-    return asMCQ(pick(BANK.inconsistency));
+    // mostly procedurally generated; occasionally a curated hand-bank case
+    return asMCQ(Math.random()<0.8 ? genInconsistency() : pick(BANK.inconsistency));
   },
   /* ---------- 2. DEDUCTION & LOGIC ---------- */
   deduction(diff){
-    if(Math.random()<0.35) return asMCQ(genSyllogism());
-    return asMCQ(pick(BANK.deduction));
+    return asMCQ(Math.random()<0.8 ? genDeduction() : pick(BANK.deduction));
   },
   /* ---------- 3. BAYESIAN UPDATE (fully generated) ---------- */
   bayes(diff){ return genBayes(diff); },
   /* ---------- 4. OBSERVATION RECALL (generated) ---------- */
   observation(diff){ return genObserve(diff); },
   /* ---------- 5. BEHAVIORAL INFERENCE ---------- */
-  coldread(diff){ return asMCQ(pick(BANK.coldread)); },
+  coldread(diff){ return asMCQ(Math.random()<0.8 ? genColdread() : pick(BANK.coldread)); },
   /* ---------- 6. MEMORY PALACE (generated) ---------- */
   palace(diff){ return genPalace(diff); },
 };
@@ -1026,6 +1024,205 @@ function genPalace(diff){
   const viewMs=base + n*300;
   const items=shuffle(PALACE_ITEMS).slice(0,n);
   return {type:'memory', items, viewMs:viewMs};
+}
+
+/* =================================================================
+   PROCEDURAL GENERATORS  (effectively unlimited variety)
+   ================================================================= */
+
+/* ---- INCONSISTENCY: pick one of several numeric/logical families ---- */
+function genInconsistency(){
+  return pick([genTimeContradiction, genGlassCount, genMoneySplit, genSpeedDistance])();
+}
+
+/* glasses vs guests: each guest poured one glass, but the count is wrong */
+function genGlassCount(){
+  const g = 3 + rand(4);                       // 3..6 guests
+  const drink = pick(['wine','brandy','sherry','port','whisky','claret']);
+  const k = g + pick([-2,-1,1]);               // a wrong count (>=1, since g>=3)
+  return {
+    question:'A host describes the evening. Which statement contradicts the others?',
+    options:[
+      'All '+g+' guests arrived together and stayed until the body was found.',
+      'I poured every guest one glass of '+drink+' from the single bottle I opened.',
+      'When the police arrived, exactly '+k+' used glasses stood on the table.',
+      'No one else entered or left the room all evening.'
+    ],
+    correct:2,
+    explanation:'<b>'+g+'</b> guests, each poured one glass, nobody else present → there should be <b>'+g+'</b> used glasses, not '+k+'. The glass count is the line that cannot hold.'
+  };
+}
+
+/* money split: the gifts already use the whole balance, so "kept" is impossible */
+function genMoneySplit(){
+  const per = pick([200,300,400,500]);
+  const n   = 2 + rand(3);                      // 2..4 beneficiaries
+  const total = per*n;
+  const kept = pick([100,150,200,250]);
+  const kin = n===2 ? 'nieces' : 'nephews';
+  return {
+    question:'The will and the bank record are read together. Which line cannot be true?',
+    options:[
+      'She withdrew her entire balance of £'+total+' that week.',
+      'She gave £'+per+' to each of her '+n+' '+kin+'.',
+      'She kept the remaining £'+kept+' in cash for herself.',
+      'Every withdrawal was made at the same High Street branch.'
+    ],
+    correct:2,
+    explanation:'£'+per+' × '+n+' = £'+total+', which already uses the whole balance. Nothing is left over, so the “remaining £'+kept+'” is impossible.'
+  };
+}
+
+/* speed × time must equal distance */
+function genSpeedDistance(){
+  const speed = pick([30,40,50,60]);
+  const mins  = pick([30,45,60,90]);
+  const real  = Math.round(speed*mins/60);
+  const claimed = real + pick([5,8,10,12,15]);  // overstated distance
+  return {
+    question:'A driver’s statement is checked against the route. Which claim is inconsistent?',
+    options:[
+      'I drove a steady '+speed+' mph the whole way, without stopping.',
+      'The journey took me exactly '+mins+' minutes, door to door.',
+      'By the odometer I had covered '+claimed+' miles.',
+      'I filled the tank before I set off.'
+    ],
+    correct:2,
+    explanation:'At <b>'+speed+' mph</b> for <b>'+mins+' minutes</b> you cover '+speed+'×'+mins+'⁄60 = <b>'+real+' miles</b>, not '+claimed+'. The distance contradicts the stated speed and time.'
+  };
+}
+
+/* ---- DEDUCTION: rotate over several airtight logical templates ---- */
+function genDeduction(){
+  return pick([genSyllogism, genOrdering, genElimination, genConditional])();
+}
+
+/* transitive ordering → the extreme one is the culprit */
+function genOrdering(){
+  const names = shuffle(['Ash','Bell','Cole','Dane','Finch','Gray','Hale','Vane']).slice(0,3);
+  const [x,y,z] = names;                         // build order z > x > y
+  const a = pick([
+    {adj:'tallest', rel:'taller than'},
+    {adj:'oldest',  rel:'older than'},
+    {adj:'heaviest',rel:'heavier than'},
+    {adj:'fastest', rel:'faster than'}
+  ]);
+  const role = pick(['thief','culprit','forger','informant']);
+  return {
+    scenario:'Three suspects: '+x+', '+y+' and '+z+'. The '+role+' is the '+a.adj+' of the three. '+
+             x+' is '+a.rel+' '+y+'. '+z+' is '+a.rel+' '+x+'.',
+    question:'Who is the '+role+'?',
+    options:[z, x, y, 'Cannot be determined'],
+    correct:0,
+    explanation:'The chain gives '+z+' &gt; '+x+' &gt; '+y+', so '+z+' is the '+a.adj+' — and the '+role+' is the '+a.adj+'. The ordering is fully determined.'
+  };
+}
+
+/* elimination to a single survivor */
+function genElimination(){
+  const roles = shuffle(['doctor','lawyer','teacher','engineer','banker','curator','chemist','pilot']).slice(0,4);
+  const ci = rand(4);
+  const culprit = roles[ci];
+  const others = roles.filter((_,i)=>i!==ci);
+  return {
+    scenario:'Four guests dined together: a '+roles[0]+', a '+roles[1]+', a '+roles[2]+' and a '+roles[3]+'. '+
+             'The culprit is one of them. It was not the '+others[0]+' and not the '+others[1]+'. '+
+             'The '+others[2]+'’s alibi is confirmed by two officers.',
+    question:'Who is the culprit?',
+    options:['The '+culprit, 'The '+others[0], 'The '+others[1], 'Cannot be determined'],
+    correct:0,
+    explanation:'Eliminate the '+others[0]+', the '+others[1]+', and the alibied '+others[2]+' — only the '+culprit+' remains. Elimination to one survivor is a valid deduction.'
+  };
+}
+
+/* modus tollens: consequent failed, so the antecedent is false */
+function genConditional(){
+  const c = pick([
+    {s:'If it had rained, the match would have been cancelled. The match was not cancelled.',
+     right:'It did not rain.', also:'It rained.'},
+    {s:'If the safe had been forced, the alarm would have sounded. The alarm never sounded.',
+     right:'The safe was not forced.', also:'The safe was forced.'},
+    {s:'If he had caught the 8:10 train, he would have reached the office by nine. He did not reach the office by nine.',
+     right:'He did not catch the 8:10 train.', also:'He caught the 8:10 train.'},
+    {s:'If the window had been left open, the papers would have scattered. The papers had not scattered.',
+     right:'The window was not left open.', also:'The window was left open.'}
+  ]);
+  return {
+    scenario:c.s,
+    question:'Which conclusion is valid?',
+    options:[c.right, c.also, 'Both statements must be false.', 'Nothing can be concluded.'],
+    correct:0,
+    explanation:'Modus tollens: the consequent did not occur, so the antecedent must be false → <b>'+c.right+'</b> Concluding “'+c.also+'” inverts the conditional and is invalid.'
+  };
+}
+
+/* ---- BEHAVIORAL INFERENCE: randomized subject + a pool of cue templates ---- */
+const COLD_SUBJ = [
+  {who:'the suspect', he:'he',  his:'his', him:'him'},
+  {who:'the widow',   he:'she', his:'her', him:'her'},
+  {who:'the witness', he:'he',  his:'his', him:'him'},
+  {who:'the clerk',   he:'she', his:'her', him:'her'},
+  {who:'the steward', he:'he',  his:'his', him:'him'},
+  {who:'the heiress', he:'she', his:'her', him:'her'}
+];
+const COLD_WRONG = [
+  'It proves the person is telling the truth.',
+  'It proves the person is guilty.',
+  'It means nothing — such behaviour is random.',
+  'The person simply has an excellent memory.',
+  'The person was only trying to be helpful.',
+  'The person misunderstood the question.',
+  'It shows complete, relaxed confidence.'
+];
+const COLD_CUES = [
+  {cue:s=>'Asked for a precise account of the night, '+s.who+' answers instantly — exact times, street names, even a waiter’s name — far more detail than the question called for.',
+   right:'The account may be rehearsed.',
+   why:'Truthful recall of an ordinary evening is patchy and reconstructed. Over-precise, <b>unprompted</b> detail is a hallmark of a story prepared in advance — a flag to probe, not proof of guilt.'},
+  {cue:s=>'When the victim’s name is spoken, '+s.who+'’s lips press into a thin line for a moment before '+s.he+' composes '+s.him+'self and offers warm sympathy.',
+   right:'A suppressed negative feeling, masked a moment later.',
+   why:'Lip compression is a classic suppression / negative-affect micro-expression. Arriving <b>before</b> the spoken sympathy, it suggests the true reaction differs from the words that follow.'},
+  {cue:s=>'Through the interview '+s.who+' keeps replies short and agreeable, but '+s.his+' foot bounces non-stop and '+s.his+' torso stays angled toward the door.',
+   right:'A strong urge to end the conversation; anxiety.',
+   why:'Ventral orientation toward the exit plus a self-soothing bouncing foot signal a wish to flee. The agreeable words are contradicted by where the body wants to go — trust the leak, not the script.'},
+  {cue:s=>'Accused directly, '+s.who+' leans in, locks unwavering eye contact, and says firmly, “I would never do such a thing.”',
+   right:'Unreliable on its own — eye contact can be deliberately staged.',
+   why:'People who believe the myth “liars look away” often <b>over-compensate</b> with forced eye contact. On its own, gaze tells you little; weigh it against everything else rather than treating it as a verdict.'},
+  {cue:s=>'Shown the weapon, the others glance at it normally, but '+s.who+'’s eyes flick to it, dart away at once, and '+s.he+' edges back an inch.',
+   right:'Avoidance — a specific aversion the others don’t share.',
+   why:'A quick look-away paired with physical distancing is avoidance behaviour. Against a baseline of neutral glances from everyone else, the deviation is the signal worth pursuing.'},
+  {cue:s=>'Asked a plain question about the timeline, '+s.who+' answers with a question of '+s.his+' own: “Why would I have any reason to be involved?”',
+   right:'Deflection — possibly buying time to construct a reply.',
+   why:'Answering a question with a question, and redirecting to the broader accusation, is a deflection pattern that can buy seconds. Note it; don’t over-read a single instance.'},
+  {cue:s=>'Describing the discovery of the body, '+s.who+' calls '+s.him+'self “absolutely devastated,” yet recounts it in a flat, even voice, lingering on vivid detail without distress.',
+   right:'The stated emotion is incongruent with the flat affect.',
+   why:'The flag is the <b>mismatch</b>: “devastated” words delivered flatly while dwelling easily on detail. Incongruence between claimed and displayed emotion merits a closer look — not a verdict by itself.'},
+  {cue:s=>'You deliberately misstate a small detail of the account, and '+s.who+' corrects you on it at once, confidently and specifically.',
+   right:'A genuine memory of that detail is likely.',
+   why:'Truth-tellers tend to <b>correct</b> errors because they are recalling real events; someone running a fabricated story more often lets a small error pass. A prompt correction is mild evidence the detail is real.'},
+  {cue:s=>'Before any accusation has been made, '+s.who+' volunteers at length how honest '+s.he+' is and how '+s.he+' would never lie.',
+   right:'Protesting too much — note it, but don’t over-read it.',
+   why:'Unprompted, emphatic declarations of honesty are weak signals at best — truthful people rarely feel the need. Treat it as something to test, not as proof of deceit.'},
+  {cue:s=>'At one particular question — and only that one — '+s.who+' tugs at '+s.his+' collar and clears '+s.his+' throat before answering.',
+   right:'A spike of stress tied to that specific topic.',
+   why:'A grooming/adaptor gesture appearing on one question and no other marks that topic as loaded. The cluster and its timing matter more than any single twitch.'},
+  {cue:s=>'Asked to retell the story a second time, '+s.who+' repeats it almost word for word, in the same order, with the same phrasing.',
+   right:'The story may be memorised rather than recalled.',
+   why:'Genuine recollection varies in wording and order on retelling; a near word-for-word repeat can indicate a rehearsed script. It is a prompt to probe details out of sequence.'},
+  {cue:s=>'Fluent and easy on every topic, '+s.who+' turns halting and vague the moment one specific subject comes up.',
+   right:'That one topic is loaded and worth probing.',
+   why:'A sudden drop from fluent to halting, isolated to a single subject, flags where the pressure is. The change relative to baseline is the signal, not the hesitation alone.'}
+];
+function genColdread(){
+  const s = pick(COLD_SUBJ);
+  const t = pick(COLD_CUES);
+  const wrongs = shuffle(COLD_WRONG).slice(0,3);
+  return {
+    scenario:t.cue(s),
+    question:'What is the most reasonable inference?',
+    options:[t.right, ...wrongs],
+    correct:0,
+    explanation:t.why
+  };
 }
 
 /* =================================================================
